@@ -1,1 +1,2 @@
-# -CS690-FinalProject
+# -CS690-FinalProject - Virtual Bookshelf App
+
