@@ -1,0 +1,30 @@
+[
+  {
+    "Title": "a",
+    "Author": "b",
+    "PublicationDate": "2002-02-11T00:00:00",
+    "PageCount": 20,
+    "Status": "Not started"
+  },
+  {
+    "Title": "What Does It All Mean?",
+    "Author": "Thomas Nagel",
+    "PublicationDate": "1987-10-15T00:00:00",
+    "PageCount": 109,
+    "Status": "Not started"
+  },
+  {
+    "Title": "52 Little Lessons from It\u0027s a Wonderful Life",
+    "Author": "Bob Welch",
+    "PublicationDate": "2012-09-10T00:00:00",
+    "PageCount": 219,
+    "Status": "Not started"
+  },
+  {
+    "Title": "As you like it",
+    "Author": "William Shakespeare",
+    "PublicationDate": "0001-01-01T00:00:00",
+    "PageCount": 154,
+    "Status": "Not started"
+  }
+]

@@ -2,36 +2,72 @@
 using Google.Apis.Books.v1;
 using Google.Apis.Books.v1.Data;
 using Google.Apis.Services;
+using Sharprompt;
 using System.Linq;
+using System.IO;
+using System.Threading.Tasks;
+using System.Text.Json;
+using System.Globalization;
+using Spectre.Console;
+using Virtual_Bookshelf.Library.Services;
 
-Env.Load(); // Loads the .env file from the current directory
 
-namespace Books.Services
+namespace Virtual_Bookshelf.Library
 {
-    public static class BookService
+    partial class Program
     {
-        public string apiKey = Environment.GetEnvironmentVariable("GOOGLE_BOOKS_API_KEY");
-       
-        public static BooksService service = new BooksService(
-            new BaseClientService.Initializer
+        static void Main(string[] args)
         {
-                ApplicationName = "ISBNBookSearch",
-                ApiKey = apiKey,
-        });
-
-        public static async Task<Volume> SearchBook(string parameter, string input)
-        {
-            Console.WriteLine("Executing a book search request...");
-            var result = await service.Volumes.List(parameter + ":" + input).ExecuteAsync();
-            if (result != null && result.Items != null)
+            Console.WriteLine("Starting Virtual Bookshelf...");
+            do
             {
-                var item = result.Items.FirstOrDefault();
-                return item;
-            }
-            return null;
+                Console.WriteLine("Displaying main menu...");
+                string mainMenu = Prompt.Select("Main Menu", new[]
+                {
+                    "Main Library", "Wishlist", "Exit"
+                });
+                Console.WriteLine($"Selected: {mainMenu}");
+                switch (mainMenu)
+                {
+                    case "Main Library":
+                        MainLibraryMenu();
+                        break;
+                    case "Wishlist":
+                        WishlistMenu();
+                        break;
+                    case "Exit":
+                        Console.WriteLine("Exiting the application...");
+                        return;
+                }
+            } while (true);
+        }
+
+        static void MainLibraryMenu()
+        {
+            do
+            {
+                string libraryMenu = Prompt.Select("Main Library", new[]
+                {
+                    "View library", "Add book", "Search/filter books", "Export library", "Return"
+                });
+                switch (libraryMenu)
+                {
+                    case "View library":
+                        ViewLibrary();
+                        break;
+                    case "Add book":
+                        AddBook();
+                        break;
+                    case "Search/filter books":
+                        SearchFilterBooks();
+                        break;
+                    case "Export library":
+                        ExportLibrary();
+                        break;
+                    case "Return":
+                        return;
+                }
+            } while (true);
         }
     }
 }
-
-
-
