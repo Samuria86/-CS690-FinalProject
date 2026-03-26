@@ -30,9 +30,9 @@ namespace Virtual_Bookshelf.Library.Services
             var result = await SearchBooks(parameter, input);
             if (result != null && result.Items != null && result.Items.Count > 0)
             {
-                return result.Items.FirstOrDefault();
+                return result.Items[0];
             }
-            return null;
+            throw new InvalidOperationException("Book not found.");
         }
     }
 }

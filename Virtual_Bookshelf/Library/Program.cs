@@ -16,6 +16,8 @@ namespace Virtual_Bookshelf.Library
 {
     partial class Program
     {
+        public static BookService BookService { get; private set; }
+
         static void Main(string[] args)
         {
             Console.WriteLine("Starting Virtual Bookshelf...");
@@ -24,7 +26,10 @@ namespace Virtual_Bookshelf.Library
                 Console.WriteLine("Displaying main menu...");
                 string mainMenu = Prompt.Select("Main Menu", new[]
                 {
-                    "Main Library", "Wishlist", "Exit"
+                    "Main Library",
+                    // TODO: "Wishlist",
+                    // TODO: Goals & statistics
+                    "Exit"
                 });
                 Console.WriteLine($"Selected: {mainMenu}");
                 switch (mainMenu)
@@ -34,6 +39,9 @@ namespace Virtual_Bookshelf.Library
                         break;
                     case "Wishlist":
                         WishlistMenu();
+                        break;
+                    case "Goals & statistics":
+                        GoalsStatisticsMenu();
                         break;
                     case "Exit":
                         Console.WriteLine("Exiting the application...");
@@ -48,7 +56,12 @@ namespace Virtual_Bookshelf.Library
             {
                 string libraryMenu = Prompt.Select("Main Library", new[]
                 {
-                    "View library", "Add book", "Search/filter books", "Export library", "Return"
+                    "View library",
+                    "Add book",
+                    "Edit/Remove book",
+                    // TODO: "Search/filter books",
+                    // TODO: "Export library",
+                    "Return"
                 });
                 switch (libraryMenu)
                 {
@@ -57,6 +70,9 @@ namespace Virtual_Bookshelf.Library
                         break;
                     case "Add book":
                         AddBook();
+                        break;
+                    case "Edit/Remove book":
+                        EditRemoveBook();
                         break;
                     case "Search/filter books":
                         SearchFilterBooks();
