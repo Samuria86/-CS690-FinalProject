@@ -1,5 +1,4 @@
-﻿using DotNetEnv;
-using Google.Apis.Books.v1;
+﻿using Google.Apis.Books.v1;
 using Google.Apis.Books.v1.Data;
 using Google.Apis.Services;
 using Sharprompt;

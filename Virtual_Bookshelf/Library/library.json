@@ -26,5 +26,12 @@
     "PublicationDate": 2013,
     "PageCount": 290,
     "Status": "Not started"
+  },
+  {
+    "Title": "And Then There Were None",
+    "Author": "Agatha Christie",
+    "PublicationDate": 1,
+    "PageCount": 210,
+    "Status": "Not started"
   }
 ]
