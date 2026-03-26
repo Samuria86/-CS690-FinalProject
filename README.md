@@ -3,3 +3,4 @@
 # Documentation:
 
 * Business requirements and use cases found in the [Main Wiki 📖](https://github.com/Samuria86/-CS690-FinalProject/wiki)
+* User Guide: [USER_GUIDE](https://github.com/Samuria86/-CS690-FinalProject/wiki/User-Guide)
