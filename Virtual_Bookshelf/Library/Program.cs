@@ -15,7 +15,7 @@ namespace Virtual_Bookshelf.Library
 {
     partial class Program
     {
-        public static BookService BookService { get; private set; }
+        public static BookService? BookService { get; set; }
 
         static void Main(string[] args)
         {
@@ -37,10 +37,10 @@ namespace Virtual_Bookshelf.Library
                         MainLibraryMenu();
                         break;
                     case "Wishlist":
-                        WishlistMenu();
+                        LibraryManager.WishlistMenu();
                         break;
                     case "Goals & statistics":
-                        GoalsStatisticsMenu();
+                        LibraryManager.GoalsStatisticsMenu();
                         break;
                     case "Exit":
                         Console.WriteLine("Exiting the application...");
@@ -65,19 +65,19 @@ namespace Virtual_Bookshelf.Library
                 switch (libraryMenu)
                 {
                     case "View library":
-                        ViewLibrary();
+                        LibraryManager.ViewLibrary();
                         break;
                     case "Add book":
-                        AddBook();
+                        LibraryManager.AddBook();
                         break;
                     case "Edit/Remove book":
-                        EditRemoveBook();
+                        LibraryManager.EditRemoveBook();
                         break;
                     case "Search/filter books":
-                        SearchFilterBooks();
+                        LibraryManager.SearchFilterBooks();
                         break;
                     case "Export library":
-                        ExportLibrary();
+                        LibraryManager.ExportLibrary();
                         break;
                     case "Return":
                         return;
