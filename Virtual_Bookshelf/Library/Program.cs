@@ -26,7 +26,7 @@ namespace Virtual_Bookshelf.Library
                 string mainMenu = Prompt.Select("Main Menu", new[]
                 {
                     "Main Library",
-                    // TODO: "Wishlist",
+                    "Wishlist",
                     // TODO: Goals & statistics
                     "Exit"
                 });
@@ -53,6 +53,7 @@ namespace Virtual_Bookshelf.Library
         {
             do
             {
+                string libraryFileName = "library.json";
                 string libraryMenu = Prompt.Select("Main Library", new[]
                 {
                     "View library",
@@ -65,19 +66,52 @@ namespace Virtual_Bookshelf.Library
                 switch (libraryMenu)
                 {
                     case "View library":
-                        LibraryManager.ViewLibrary();
+                        LibraryManager.ViewBooks(libraryFileName);
                         break;
                     case "Add book":
-                        LibraryManager.AddBook();
+                        LibraryManager.AddBook(libraryFileName);
                         break;
                     case "Edit/Remove book":
-                        LibraryManager.EditRemoveBook();
+                        LibraryManager.EditOrRemoveBook(libraryFileName);
                         break;
                     case "Search/filter books":
                         LibraryManager.SearchFilterBooks();
                         break;
                     case "Export library":
                         LibraryManager.ExportLibrary();
+                        break;
+                    case "Return":
+                        return;
+                }
+            } while (true);
+        }
+
+        static void WishListMenu()
+        {
+            do
+            {
+                string wishlistFileName = "wishlist.json";
+                string wishlistMenu = Prompt.Select("Wishlist", new[]
+                {
+                    "View wishlist",
+                    "Add book to wishlist",
+                    "Edit/Remove book from wishlist",
+                    // TODO: "Add book to main library",
+                    "Return"
+                });
+                switch (wishlistMenu)
+                {
+                    case "View wishlist":
+                        LibraryManager.ViewBooks(wishlistFileName);
+                        break;
+                    case "Add book to wishlist":
+                        LibraryManager.AddBook(wishlistFileName);
+                        break;
+                    case "Edit/Remove book from wishlist":
+                        LibraryManager.EditOrRemoveBook(wishlistFileName);
+                        break;
+                    case "Add book to main library":
+                        // TODO
                         break;
                     case "Return":
                         return;

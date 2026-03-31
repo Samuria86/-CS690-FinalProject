@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.Json;
 using Virtual_Bookshelf.Library.Models;
 using Virtual_Bookshelf.Library.Services;
+using System.Linq.Expressions;
 
 namespace Virtual_Bookshelf.Library
 {
@@ -43,7 +44,7 @@ namespace Virtual_Bookshelf.Library
                 PublicationDate = DateTime.TryParse(result.VolumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
                 PageCount = result.VolumeInfo.PageCount ?? 0
             };
-            LibraryStorage.AddBook(book);
+            LibraryStorage.SaveBook(book);
         }
 
         public static void SearchBookByTitle()
@@ -59,42 +60,49 @@ namespace Virtual_Bookshelf.Library
                 Console.WriteLine("No results found for the given Title.");
                 return;
             }
-
-            var selections = Prompt.MultiSelect("Select books to add to library", result.Items.Select(b => b.VolumeInfo.Title + " by " + string.Join(", ", b.VolumeInfo.Authors ?? new List<string>())).ToArray());
-            Console.WriteLine("Selected books:");
-            foreach (var selected in selections)
+            try
             {
-                Console.WriteLine(selected);
-            }
 
-            var confirm = Prompt.Confirm("Confirm add selected books to library?");
-            if (!confirm)
-            {
-                Console.WriteLine("Books not added.");
-                return;
-            }
-
-            var bookList = LibraryStorage.LoadBookList();
-            foreach (var item in result.Items)
-            {
-                string bookTitle = item.VolumeInfo.Title + " by " + string.Join(", ", item.VolumeInfo.Authors ?? new List<string>());
-                if (selections.Contains(bookTitle))
+                var selections = Prompt.MultiSelect("Select books to add to library", result.Items.Select(b => b.VolumeInfo.Title + " by " + string.Join(", ", b.VolumeInfo.Authors ?? new List<string>()) + " (" + (b.VolumeInfo.PublishedDate ?? "Unknown") + ")").ToArray());
+                Console.WriteLine("Selected books:");
+                foreach (var selected in selections)
                 {
-                    bookList.Add(new Book
-                    {
-                        Title = item.VolumeInfo.Title,
-                        Author = string.Join(", ", item.VolumeInfo.Authors ?? new List<string>()),
-                        PublicationDate = DateTime.TryParse(item.VolumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
-                        PageCount = item.VolumeInfo.PageCount ?? 0
-                    });
+                    Console.WriteLine(selected);
                 }
+
+                var confirm = Prompt.Confirm("Confirm add selected books to library?");
+                if (!confirm)
+                {
+                    Console.WriteLine("Books not added.");
+                    return;
+                }
+
+                var bookList = LibraryStorage.LoadBookList();
+                foreach (var item in result.Items)
+                {
+                    string bookTitle = item.VolumeInfo.Title + " by " + string.Join(", ", item.VolumeInfo.Authors ?? new List<string>());
+                    if (selections.Contains(bookTitle))
+                    {
+                        bookList.Add(new Book
+                        {
+                            Title = item.VolumeInfo.Title,
+                            Author = string.Join(", ", item.VolumeInfo.Authors ?? new List<string>()),
+                            PublicationDate = DateTime.TryParse(item.VolumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
+                            PageCount = item.VolumeInfo.PageCount ?? 0
+                        });
+                    }
+                }
+                LibraryStorage.UpdateBooks(bookList);
             }
-            LibraryStorage.UpdateBooks(bookList);
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Book selection cancelled. No books added.");
+            }
         }
 
         public static void SearchBookByAuthor()
         {
-            Console.Write("Enter Author");
+            Console.Write("Enter Author: ");
             string author;
             do
             {
@@ -115,36 +123,44 @@ namespace Virtual_Bookshelf.Library
                 return;
             }
 
-            var selections = Prompt.MultiSelect("Select books to add to library", result.Items.Select(b => b.VolumeInfo.Title + " by " + string.Join(", ", b.VolumeInfo.Authors ?? new List<string>())).ToArray());
-            Console.WriteLine("Selected books:");
-            foreach (var selected in selections)
+            try
             {
-                Console.WriteLine(selected);
-            }
+                var selections = Prompt.MultiSelect("Select books to add to library", result.Items.Select(b => b.VolumeInfo.Title + " by " + string.Join(", ", b.VolumeInfo.Authors ?? new List<string>()) + " (" + (b.VolumeInfo.PublishedDate ?? "Unknown") + ")").ToArray());
 
-            var confirm = Prompt.Confirm("Confirm add selected books to library?");
-            if (!confirm)
-            {
-                Console.WriteLine("Books not added.");
-                return;
-            }
-
-            var bookList = LibraryStorage.LoadBookList();
-            foreach (var item in result.Items)
-            {
-                string bookTitle = item.VolumeInfo.Title + " by " + string.Join(", ", item.VolumeInfo.Authors ?? new List<string>());
-                if (selections.Contains(bookTitle))
+                Console.WriteLine("Selected books:");
+                foreach (var selected in selections)
                 {
-                    bookList.Add(new Book
-                    {
-                        Title = item.VolumeInfo.Title,
-                        Author = string.Join(", ", item.VolumeInfo.Authors ?? new List<string>()),
-                        PublicationDate = DateTime.TryParse(item.VolumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
-                        PageCount = item.VolumeInfo.PageCount ?? 0
-                    });
+                    Console.WriteLine(selected);
                 }
+
+                var confirm = Prompt.Confirm("Confirm add selected books to library?");
+                if (!confirm)
+                {
+                    Console.WriteLine("Books not added.");
+                    return;
+                }
+                var bookList = LibraryStorage.LoadBookList();
+                foreach (var item in result.Items)
+                {
+                    string bookTitle = item.VolumeInfo.Title + " by " + string.Join(", ", item.VolumeInfo.Authors ?? new List<string>());
+                    if (selections.Contains(bookTitle))
+                    {
+                        bookList.Add(new Book
+                        {
+                            Title = item.VolumeInfo.Title,
+                            Author = string.Join(", ", item.VolumeInfo.Authors ?? new List<string>()),
+                            PublicationDate = DateTime.TryParse(item.VolumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
+                            PageCount = item.VolumeInfo.PageCount ?? 0
+                        });
+                    }
+                }
+                LibraryStorage.UpdateBooks(bookList);
             }
-            LibraryStorage.UpdateBooks(bookList);
+            catch (OperationCanceledException)
+            {
+                Console.WriteLine("Book selection cancelled. No books added.");
+            }
+
         }
     }
 }

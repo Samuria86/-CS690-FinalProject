@@ -10,10 +10,10 @@ namespace Virtual_Bookshelf.Library
 {
     public static class LibraryManager
     {
-        public static void ViewLibrary()
+        public static void ViewBooks(string FileName)
         {
             Console.WriteLine("Viewing library...");
-            var bookList = LibraryStorage.LoadBookList();
+            var bookList = LibraryStorage.LoadBookList(FileName);
 
             if (bookList.Count == 0)
             {
@@ -37,7 +37,7 @@ namespace Virtual_Bookshelf.Library
             AnsiConsole.Write(table);
         }
 
-        public static void AddBook()
+        public static void AddBook(string FileName)
         {
             var entryMethod = Prompt.Select("Add book by", new[]
             {
@@ -49,7 +49,7 @@ namespace Virtual_Bookshelf.Library
             switch (entryMethod)
             {
                 case "Manual entry":
-                    AddBookManually();
+                    AddBookManually(FileName);
                     break;
                 case "Google Books search (requires API key)":
                     var apiKey = ApiKeyManager.GetOrCreateApiKey();
@@ -85,7 +85,7 @@ namespace Virtual_Bookshelf.Library
             }
         }
 
-        public static void AddBookManually()
+        public static void AddBookManually(string FileName)
         {
             Console.WriteLine("Adding book manually, enter 'exit' to stop...");
 
@@ -114,7 +114,7 @@ namespace Virtual_Bookshelf.Library
                     PublicationDate = int.Parse(publicationYear),
                     PageCount = pageCount
                 };
-                LibraryStorage.AddBook(book);
+                LibraryStorage.SaveBook(book, FileName);
                 Console.WriteLine("Book added successfully!");
             }
             else
@@ -141,9 +141,9 @@ namespace Virtual_Bookshelf.Library
             return GetValidYearInput(fieldName);
         }
 
-        public static void EditRemoveBook()
+        public static void EditOrRemoveBook(string FileName)
         {
-            var bookList = LibraryStorage.LoadBookList();
+            var bookList = LibraryStorage.LoadBookList(FileName);
 
             if (bookList.Count == 0)
             {
@@ -158,17 +158,17 @@ namespace Virtual_Bookshelf.Library
             switch (selection)
             {
                 case "Edit":
-                    EditBook(selectedBook, bookList);
+                    EditBook(selectedBook, bookList, FileName);
                     break;
                 case "Remove":
-                    RemoveBook(selectedBook, bookList);
+                    RemoveBook(selectedBook, bookList, FileName);
                     break;
                 case "Return":
                     return;
             }
         }
 
-        public static void EditBook(string selectedBook, List<Book> bookList)
+        public static void EditBook(string selectedBook, List<Book> bookList, string FileName)
         {
             var book = bookList.FirstOrDefault(b => (b.Title + " by " + b.Author) == selectedBook);
             if (book == null) return;
@@ -184,11 +184,11 @@ namespace Virtual_Bookshelf.Library
             if (!string.IsNullOrWhiteSpace(newPublicationDate) && DateTime.TryParse(newPublicationDate, out DateTime pubDate)) book.PublicationDate = pubDate.Year;
             if (!string.IsNullOrWhiteSpace(newPageCountStr) && int.TryParse(newPageCountStr, out int pageCount)) book.PageCount = pageCount;
 
-            LibraryStorage.UpdateBooks(bookList);
+            LibraryStorage.UpdateBooks(bookList, FileName);
             Console.WriteLine("Book updated successfully!");
         }
 
-        public static void RemoveBook(string selectedBook, List<Book> bookList)
+        public static void RemoveBook(string selectedBook, List<Book> bookList, string FileName)
         {
             var book = bookList.FirstOrDefault(b => (b.Title + " by " + b.Author) == selectedBook);
             if (book == null) return;
@@ -201,7 +201,7 @@ namespace Virtual_Bookshelf.Library
             }
 
             bookList.Remove(book);
-            LibraryStorage.UpdateBooks(bookList);
+            LibraryStorage.UpdateBooks(bookList, FileName);
             Console.WriteLine("Book removed successfully!");
         }
 

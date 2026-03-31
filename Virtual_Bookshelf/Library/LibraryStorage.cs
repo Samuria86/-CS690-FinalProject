@@ -8,11 +8,8 @@ namespace Virtual_Bookshelf.Library
 {
     public static class LibraryStorage
     {
-        private const string FileName = "library.json";
 
-        public static string GetFilePath() => FileName;
-
-        public static List<Book> LoadBookList()
+        public static List<Book> LoadBookList(string FileName)
         {
             if (!File.Exists(FileName))
             {
@@ -28,22 +25,22 @@ namespace Virtual_Bookshelf.Library
             return JsonSerializer.Deserialize<List<Book>>(data) ?? new List<Book>();
         }
 
-        public static void SaveBookList(List<Book> bookList)
+        public static void SaveBookList(List<Book> bookList, string FileName)
         {
             string jsonData = JsonSerializer.Serialize(bookList, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(FileName, jsonData);
         }
 
-        public static void AddBook(Book book)
+        public static void SaveBook(Book book, string FileName)
         {
-            var books = LoadBookList();
+            var books = LoadBookList(FileName);
             books.Add(book);
-            SaveBookList(books);
+            SaveBookList(books, FileName);
         }
 
-        public static void UpdateBooks(List<Book> bookList)
+        public static void UpdateBooks(List<Book> bookList, string FileName)
         {
-            SaveBookList(bookList);
+            SaveBookList(bookList, FileName);
         }
     }
 }
