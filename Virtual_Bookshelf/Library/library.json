@@ -4,27 +4,69 @@
     "Author": "Thomas Nagel",
     "PublicationDate": 1987,
     "PageCount": 109,
-    "Status": "Not started"
+    "Status": "Not started",
+    "DateAdded": "2026-04-10T17:36:45.9881556+00:00",
+    "DateFinished": null,
+    "DateModified": "2026-04-10T17:36:45.9881571+00:00"
   },
   {
     "Title": "52 Little Lessons from It\u0027s a Wonderful Life",
     "Author": "Bob Welch",
     "PublicationDate": 2012,
     "PageCount": 219,
-    "Status": "Not started"
+    "Status": "Not started",
+    "DateAdded": "2026-04-10T17:36:45.9881864+00:00",
+    "DateFinished": null,
+    "DateModified": "2026-04-10T17:36:45.9881866+00:00"
   },
   {
     "Title": "As you like it",
     "Author": "William Shakespeare",
     "PublicationDate": 1908,
     "PageCount": 154,
-    "Status": "Not started"
+    "Status": "Not started",
+    "DateAdded": "2026-04-10T17:36:45.9882077+00:00",
+    "DateFinished": null,
+    "DateModified": "2026-04-10T17:36:45.9882078+00:00"
   },
   {
     "Title": "Making Everyday Electronics Work: A Do-It-Yourself Guide",
     "Author": "Stan Gibilisco",
     "PublicationDate": 2013,
     "PageCount": 290,
-    "Status": "Not started"
+    "Status": "Not started",
+    "DateAdded": "2026-04-10T17:36:45.9882164+00:00",
+    "DateFinished": null,
+    "DateModified": "2026-04-10T17:36:45.9882165+00:00"
+  },
+  {
+    "Title": "Fsharp and Csharp on the DotNet Platform",
+    "Author": "Ge Shu",
+    "PublicationDate": 1,
+    "PageCount": 0,
+    "Status": "Not started",
+    "DateAdded": "2026-04-10T17:36:45.9887066+00:00",
+    "DateFinished": null,
+    "DateModified": "2026-04-10T17:36:45.9887073+00:00"
+  },
+  {
+    "Title": "The Rust Programming Language",
+    "Author": "Steve Klabnik, Carol Nichols",
+    "PublicationDate": 2018,
+    "PageCount": 553,
+    "Status": "Not started",
+    "DateAdded": "2026-04-10T17:51:00.598306+00:00",
+    "DateFinished": null,
+    "DateModified": "2026-04-10T17:51:00.5983067+00:00"
+  },
+  {
+    "Title": "The Dude De Ching",
+    "Author": "Oliver Benjamin",
+    "PublicationDate": 2016,
+    "PageCount": 344,
+    "Status": "Not started",
+    "DateAdded": "2026-04-10T18:29:14.7783745+00:00",
+    "DateFinished": null,
+    "DateModified": "2026-04-10T18:29:14.778376+00:00"
   }
 ]

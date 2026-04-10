@@ -1,28 +1,16 @@
+using Google.Apis.Books.v1.Data;
 using Spectre.Console;
 using Sharprompt;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.Json;
 using Virtual_Bookshelf.Library.Models;
-using Virtual_Bookshelf.Library.Services;
-using System.Linq.Expressions;
 
 namespace Virtual_Bookshelf.Library
 {
     public static class LibrarySearch
     {
-        public static void SearchBookByISBN()
+        public static void SearchBookByISBN(string FileName, string Mode)
         {
-            Console.Write("Enter ISBN: ");
-            string isbn = Prompt.Input<string>("ISBN", validators: new[] { Validators.Required(), Validators.RegularExpression(@"^\d{10}(\d{3})?$", "Please enter a valid 10 or 13 digit ISBN") });
-            string parameter = "isbn";
-            var bookService = Program.BookService ?? throw new InvalidOperationException("BookService is not initialized.");
-            var result = AnsiConsole.Status().Start("Searching for book...", ctx =>
-            {
-                return bookService.SearchBook(parameter, isbn).GetAwaiter().GetResult();
-            });
+            var isbn = Prompt.Input<string>("ISBN", validators: new[] { Validators.Required(), Validators.RegularExpression(@"^\d{10}(\d{3})?$", "Please enter a valid 10 or 13 digit ISBN") });
+            var result = SearchSingleBook("isbn", isbn, "Searching for book...");
 
             if (result == null)
             {
@@ -30,102 +18,112 @@ namespace Virtual_Bookshelf.Library
                 return;
             }
 
-            var confirm = Prompt.Confirm("Confirm add book " + result.VolumeInfo.Title + " by " + string.Join(", ", result.VolumeInfo.Authors ?? new List<string>()) + " to library?");
-            if (!confirm)
-            {
-                Console.WriteLine("Book not added.");
-                return;
-            }
-
-            var book = new Book
-            {
-                Title = result.VolumeInfo.Title,
-                Author = string.Join(", ", result.VolumeInfo.Authors ?? new List<string>()),
-                PublicationDate = DateTime.TryParse(result.VolumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
-                PageCount = result.VolumeInfo.PageCount ?? 0
-            };
-            LibraryStorage.SaveBook(book);
+            ConfirmAndSaveBook(result.VolumeInfo, FileName, Mode);
         }
 
-        public static void SearchBookByTitle()
+        public static void SearchBookByTitle(string FileName, string Mode)
         {
-            Console.Write("Enter Title: ");
-            string title = Prompt.Input<string>("Title", validators: new[] { Validators.Required() });
-            string parameter = "intitle";
-            var bookService = Program.BookService ?? throw new InvalidOperationException("BookService is not initialized.");
-            var result = bookService.SearchBooks(parameter, title).GetAwaiter().GetResult();
+            var title = Prompt.Input<string>("Title", validators: new[] { Validators.Required() });
+            var result = SearchBooks("intitle", title, "Searching for books...");
 
-            if (result == null || result.Items == null || result.Items.Count == 0)
+            if (!HasResults(result))
             {
                 Console.WriteLine("No results found for the given Title.");
                 return;
             }
-            try
-            {
 
-                var selections = Prompt.MultiSelect("Select books to add to library", result.Items.Select(b => b.VolumeInfo.Title + " by " + string.Join(", ", b.VolumeInfo.Authors ?? new List<string>()) + " (" + (b.VolumeInfo.PublishedDate ?? "Unknown") + ")").ToArray());
-                Console.WriteLine("Selected books:");
-                foreach (var selected in selections)
-                {
-                    Console.WriteLine(selected);
-                }
-
-                var confirm = Prompt.Confirm("Confirm add selected books to library?");
-                if (!confirm)
-                {
-                    Console.WriteLine("Books not added.");
-                    return;
-                }
-
-                var bookList = LibraryStorage.LoadBookList();
-                foreach (var item in result.Items)
-                {
-                    string bookTitle = item.VolumeInfo.Title + " by " + string.Join(", ", item.VolumeInfo.Authors ?? new List<string>());
-                    if (selections.Contains(bookTitle))
-                    {
-                        bookList.Add(new Book
-                        {
-                            Title = item.VolumeInfo.Title,
-                            Author = string.Join(", ", item.VolumeInfo.Authors ?? new List<string>()),
-                            PublicationDate = DateTime.TryParse(item.VolumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
-                            PageCount = item.VolumeInfo.PageCount ?? 0
-                        });
-                    }
-                }
-                LibraryStorage.UpdateBooks(bookList);
-            }
-            catch (OperationCanceledException)
-            {
-                Console.WriteLine("Book selection cancelled. No books added.");
-            }
+            var titleItems = result!.Items!;
+            TryAddSelectedBooks(titleItems, FileName, Mode);
         }
 
-        public static void SearchBookByAuthor()
+        public static void SearchBookByAuthor(string FileName, string Mode)
         {
-            Console.Write("Enter Author: ");
-            string author;
-            do
-            {
-                author = Console.ReadLine() ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(author))
-                {
-                    Console.WriteLine("Author is required. Please enter a value.");
-                }
-            } while (string.IsNullOrWhiteSpace(author));
+            var author = Prompt.Input<string>("Author", validators: new[] { Validators.Required() });
+            var result = SearchBooks("inauthor", author, "Searching for books...");
 
-            string parameter = "inauthor";
-            var bookService = Program.BookService ?? throw new InvalidOperationException("BookService is not initialized.");
-            var result = bookService.SearchBooks(parameter, author).GetAwaiter().GetResult();
-
-            if (result == null || result.Items == null || result.Items.Count == 0)
+            if (!HasResults(result))
             {
                 Console.WriteLine("No results found for the given Author.");
                 return;
             }
 
+            var authorItems = result!.Items!;
+            TryAddSelectedBooks(authorItems, FileName, Mode);
+        }
+
+        public static void SearchLibrary(string Query, string FileName, string Mode)
+        {
+            var bookList = LibraryStorage.LoadBookList(FileName);
+            var results = bookList.Where(b => b.Title.Contains(Query, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            if (results.Count == 0)
+            {
+                Console.WriteLine("No books found with the given title.");
+                return;
+            }
+
+            Console.WriteLine($"Books found with title containing '{Query}':");
+            var selectedBook = Prompt.Select("Select a book to view/edit", results.Select(b => b.Title + " by " + b.Author).ToArray());
+
+            while (true)
+            {
+                var selection = Prompt.Select("Choose action", new[]
+                {
+                    "View details",
+                    "Edit",
+                    "Change status",
+                    "Remove",
+                    "Return"
+                });
+                switch (selection)
+                {
+                    case "View details":
+                        LibraryManager.ViewBookDetails(selectedBook, bookList);
+                        break;
+                    case "Edit":
+                        LibraryManager.EditBook(selectedBook, bookList, FileName);
+                        return;
+                    case "Change status":
+                        LibraryManager.ChangeBookStatus(selectedBook, bookList, FileName);
+                        return;
+                    case "Remove":
+                        LibraryManager.RemoveBook(selectedBook, bookList, FileName);
+                        return;
+                    case "Return":
+                        return;
+                }
+            }
+        }
+
+        private static Volume? SearchSingleBook(string parameter, string query, string statusMessage)
+        {
+            var bookService = Program.BookService ?? throw new InvalidOperationException("BookService is not initialized.");
+            return AnsiConsole.Status().Start(statusMessage, ctx =>
+            {
+                return bookService.SearchBook(parameter, query).GetAwaiter().GetResult();
+            });
+        }
+
+        private static Volumes? SearchBooks(string parameter, string query, string statusMessage)
+        {
+            var bookService = Program.BookService ?? throw new InvalidOperationException("BookService is not initialized.");
+            return AnsiConsole.Status().Start(statusMessage, ctx =>
+            {
+                return bookService.SearchBooks(parameter, query).GetAwaiter().GetResult();
+            });
+        }
+
+        private static bool HasResults(Volumes? result)
+        {
+            return result != null && result.Items != null && result.Items.Count > 0;
+        }
+
+        private static void TryAddSelectedBooks(IList<Volume> items, string fileName, string Mode)
+        {
             try
             {
-                var selections = Prompt.MultiSelect("Select books to add to library", result.Items.Select(b => b.VolumeInfo.Title + " by " + string.Join(", ", b.VolumeInfo.Authors ?? new List<string>()) + " (" + (b.VolumeInfo.PublishedDate ?? "Unknown") + ")").ToArray());
+                var choices = GetBookChoices(items);
+                var selections = Prompt.MultiSelect("Select books to add to " + Mode, choices);
 
                 Console.WriteLine("Selected books:");
                 foreach (var selected in selections)
@@ -133,34 +131,81 @@ namespace Virtual_Bookshelf.Library
                     Console.WriteLine(selected);
                 }
 
-                var confirm = Prompt.Confirm("Confirm add selected books to library?");
-                if (!confirm)
+                if (!Prompt.Confirm("Confirm add selected books to " + Mode + "?"))
                 {
                     Console.WriteLine("Books not added.");
                     return;
                 }
-                var bookList = LibraryStorage.LoadBookList();
-                foreach (var item in result.Items)
+
+                var bookList = LibraryStorage.LoadBookList(fileName);
+                foreach (var item in items)
                 {
-                    string bookTitle = item.VolumeInfo.Title + " by " + string.Join(", ", item.VolumeInfo.Authors ?? new List<string>());
-                    if (selections.Contains(bookTitle))
+                    var label = GetBookLabel(item);
+                    if (selections.Contains(label))
                     {
-                        bookList.Add(new Book
-                        {
-                            Title = item.VolumeInfo.Title,
-                            Author = string.Join(", ", item.VolumeInfo.Authors ?? new List<string>()),
-                            PublicationDate = DateTime.TryParse(item.VolumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
-                            PageCount = item.VolumeInfo.PageCount ?? 0
-                        });
+                        bookList.Add(ToBook(item.VolumeInfo, Mode));
                     }
                 }
-                LibraryStorage.UpdateBooks(bookList);
+
+                LibraryStorage.UpdateBooks(bookList, fileName);
             }
             catch (OperationCanceledException)
             {
                 Console.WriteLine("Book selection cancelled. No books added.");
             }
+        }
 
+        private static string[] GetBookChoices(IEnumerable<Volume> items)
+        {
+            return items.Select(GetBookLabel).ToArray();
+        }
+
+        private static string GetBookLabel(Volume item)
+        {
+            var info = item.VolumeInfo;
+            var title = info?.Title ?? string.Empty;
+            var authors = string.Join(", ", info?.Authors ?? new List<string>());
+            var publishedDate = info?.PublishedDate ?? "Unknown";
+            return $"{title} by {authors} ({publishedDate})";
+        }
+
+        private static void ConfirmAndSaveBook(Volume.VolumeInfoData? volumeInfo, string fileName, string Mode)
+        {
+            if (volumeInfo == null)
+            {
+                Console.WriteLine("Book information is unavailable.");
+                return;
+            }
+
+            var label = GetBookLabel(volumeInfo);
+            if (!Prompt.Confirm($"Confirm add book {label} to {Mode}?"))
+            {
+                Console.WriteLine("Book not added.");
+                return;
+            }
+
+            LibraryStorage.SaveBook(ToBook(volumeInfo, Mode), fileName);
+        }
+
+        private static string GetBookLabel(Volume.VolumeInfoData volumeInfo)
+        {
+            var title = volumeInfo.Title ?? string.Empty;
+            var authors = string.Join(", ", volumeInfo.Authors ?? new List<string>());
+            var publishedDate = volumeInfo.PublishedDate ?? "Unknown";
+            return $"{title} by {authors} ({publishedDate})";
+        }
+
+        private static Book ToBook(Volume.VolumeInfoData volumeInfo, string Mode)
+        {
+            string status = Mode == "wishlist" ? "In wishlist" : "Not started";
+            return new Book
+            {
+                Title = volumeInfo.Title,
+                Author = string.Join(", ", volumeInfo.Authors ?? new List<string>()),
+                PublicationDate = DateTime.TryParse(volumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
+                PageCount = volumeInfo.PageCount ?? 0,
+                Status = status
+            };
         }
     }
 }

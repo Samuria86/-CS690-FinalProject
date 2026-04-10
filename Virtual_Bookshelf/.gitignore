@@ -12,8 +12,6 @@
 *.user
 *.userosscache
 *.sln.docstates
-library.json
-wishlist.json
 
 
 # User-specific files (MonoDevelop/Xamarin Studio)

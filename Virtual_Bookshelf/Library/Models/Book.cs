@@ -7,5 +7,8 @@ namespace Virtual_Bookshelf.Library.Models
         public int PublicationDate { get; set; } = DateTime.MinValue.Year;
         public int PageCount { get; set; } = 0;
         public string Status { get; set; } = "Not started";
+        public DateTime DateAdded { get; set; } = DateTime.Now;
+        public DateTime? DateFinished { get; set; } = null;
+        public DateTime DateModified { get; set; } = DateTime.Now;
     }
 }
