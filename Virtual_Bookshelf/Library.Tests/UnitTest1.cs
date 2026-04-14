@@ -1,4 +1,5 @@
 ﻿using Xunit;
+using Virtual_Bookshelf.Library;
 using Virtual_Bookshelf.Library.Services;
 using Virtual_Bookshelf.Library.Models;
 using System.Diagnostics;
@@ -147,12 +148,12 @@ namespace Library.UnitTests.Services
         }
     }
 
-    public class BookJsonPersistenceTest
+    public class BookStoragePersistenceTest
     {
-        private string GetTestFilePath() => Path.Combine(Path.GetTempPath(), $"library_test_{Guid.NewGuid()}.json");
+        private string GetTestFilePath() => Path.Combine(Path.GetTempPath(), $"library_test_{Guid.NewGuid()}.dat");
 
         [Fact]
-        public void BookJsonPersistence_SaveAndLoadBooks_Success()
+        public void BookStorage_SaveAndLoadBooks_Success()
         {
             // Arrange
             var testFile = GetTestFilePath();
@@ -163,10 +164,8 @@ namespace Library.UnitTests.Services
             };
 
             // Act
-            var json = JsonSerializer.Serialize(books, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(testFile, json);
-            var loadedJson = File.ReadAllText(testFile);
-            var loadedBooks = JsonSerializer.Deserialize<List<Book>>(loadedJson);
+            LibraryStorage.SaveBookList(books, testFile);
+            var loadedBooks = LibraryStorage.LoadBookList(testFile);
 
             // Assert
             Assert.NotNull(loadedBooks);
@@ -179,15 +178,14 @@ namespace Library.UnitTests.Services
         }
 
         [Fact]
-        public void BookJsonPersistence_LoadEmptyFile_ReturnsEmptyList()
+        public void BookStorage_LoadEmptyFile_ReturnsEmptyList()
         {
             // Arrange
             var testFile = GetTestFilePath();
             File.WriteAllText(testFile, "");
 
             // Act
-            var content = File.ReadAllText(testFile);
-            List<Book> books = string.IsNullOrWhiteSpace(content) ? new List<Book>() : JsonSerializer.Deserialize<List<Book>>(content);
+            var books = LibraryStorage.LoadBookList(testFile);
 
             // Assert
             Assert.NotNull(books);
@@ -198,13 +196,13 @@ namespace Library.UnitTests.Services
         }
 
         [Fact]
-        public void BookJsonPersistence_LoadNonexistentFile_ReturnsEmptyList()
+        public void BookStorage_LoadNonexistentFile_ReturnsEmptyList()
         {
             // Arrange
             var testFile = GetTestFilePath();
 
             // Act
-            var books = !File.Exists(testFile) ? new List<Book>() : JsonSerializer.Deserialize<List<Book>>(File.ReadAllText(testFile));
+            var books = LibraryStorage.LoadBookList(testFile);
 
             // Assert
             Assert.NotNull(books);
@@ -212,7 +210,7 @@ namespace Library.UnitTests.Services
         }
 
         [Fact]
-        public void BookJsonPersistence_SaveMultipleBooks_Readable()
+        public void BookStorage_SaveMultipleBooks_Readable()
         {
             // Arrange
             var testFile = GetTestFilePath();
@@ -229,15 +227,41 @@ namespace Library.UnitTests.Services
             }
 
             // Act
-            var json = JsonSerializer.Serialize(books, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(testFile, json);
-            var loadedBooks = JsonSerializer.Deserialize<List<Book>>(File.ReadAllText(testFile));
+            LibraryStorage.SaveBookList(books, testFile);
+            var loadedBooks = LibraryStorage.LoadBookList(testFile);
 
             // Assert
             Assert.NotNull(loadedBooks);
             Assert.Equal(5, loadedBooks.Count);
             Assert.Equal("Book 5", loadedBooks[4].Title);
             Assert.Equal(400, loadedBooks[4].PageCount);
+
+            // Cleanup
+            if (File.Exists(testFile)) File.Delete(testFile);
+        }
+
+        [Fact]
+        public void BookStorage_SaveBook_AppendsBookToExistingMemoryMappedFile()
+        {
+            // Arrange
+            var testFile = GetTestFilePath();
+            var initialBooks = new List<Book>
+            {
+                new Book { Title = "Initial Book", Author = "Initial Author", PublicationDate = 2022, PageCount = 200 }
+            };
+            LibraryStorage.SaveBookList(initialBooks, testFile);
+
+            var newBook = new Book { Title = "New Book", Author = "New Author", PublicationDate = 2023, PageCount = 300 };
+
+            // Act
+            LibraryStorage.SaveBook(newBook, testFile);
+            var loadedBooks = LibraryStorage.LoadBookList(testFile);
+
+            // Assert
+            Assert.NotNull(loadedBooks);
+            Assert.Equal(2, loadedBooks.Count);
+            Assert.Equal("Initial Book", loadedBooks[0].Title);
+            Assert.Equal("New Book", loadedBooks[1].Title);
 
             // Cleanup
             if (File.Exists(testFile)) File.Delete(testFile);

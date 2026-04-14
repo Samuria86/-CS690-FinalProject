@@ -6,6 +6,10 @@
 # dotenv files
 .env
 
+# persistent storage
+*.dat
+*.json
+
 # User-specific files
 *.rsuser
 *.suo

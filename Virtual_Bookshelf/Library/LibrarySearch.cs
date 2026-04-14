@@ -51,10 +51,16 @@ namespace Virtual_Bookshelf.Library
             TryAddSelectedBooks(authorItems, FileName, Mode);
         }
 
-        public static void SearchLibrary(string Query, string FileName, string Mode)
+        public static void SearchLibrary(string Query, string FileName, string Keyword)
         {
             var bookList = LibraryStorage.LoadBookList(FileName);
-            var results = bookList.Where(b => b.Title.Contains(Query, StringComparison.OrdinalIgnoreCase)).ToList();
+            var results = new List<Book>();
+            if (Keyword == "Title")
+                results = bookList.Where(b => b.Title.Contains(Query, StringComparison.OrdinalIgnoreCase)).ToList();
+            else if (Keyword == "Author")
+                results = bookList.Where(b => b.Author.Contains(Query, StringComparison.OrdinalIgnoreCase)).ToList();
+            else if (Keyword == "Status")
+                results = bookList.Where(b => b.Status != null && b.Status.Contains(Query, StringComparison.OrdinalIgnoreCase)).ToList();
 
             if (results.Count == 0)
             {
@@ -92,6 +98,25 @@ namespace Virtual_Bookshelf.Library
                     case "Return":
                         return;
                 }
+            }
+        }
+
+        public static void FilterBooksByYears(string FileName, int StartYear, int EndYear)
+        {
+            var bookList = LibraryStorage.LoadBookList(FileName);
+
+            var results = bookList.Where(b => b.PublicationDate >= StartYear && b.PublicationDate <= EndYear).ToList();
+
+            if (results.Count == 0)
+            {
+                Console.WriteLine($"No books found published between {StartYear} and {EndYear}.");
+                return;
+            }
+
+            Console.WriteLine($"Books published between {StartYear} and {EndYear}:");
+            foreach (var book in results)
+            {
+                Console.WriteLine($"{book.Title} by {book.Author} ({book.PublicationDate})");
             }
         }
 
@@ -138,12 +163,18 @@ namespace Virtual_Bookshelf.Library
                 }
 
                 var bookList = LibraryStorage.LoadBookList(fileName);
+                var status = Prompt.Select("Select status for these books", new[]
+                {
+                    "Not started",
+                    "In progress",
+                    "Finished"
+                });
                 foreach (var item in items)
                 {
                     var label = GetBookLabel(item);
                     if (selections.Contains(label))
                     {
-                        bookList.Add(ToBook(item.VolumeInfo, Mode));
+                        bookList.Add(ToBook(item.VolumeInfo, Mode, null));
                     }
                 }
 
@@ -183,8 +214,7 @@ namespace Virtual_Bookshelf.Library
                 Console.WriteLine("Book not added.");
                 return;
             }
-
-            LibraryStorage.SaveBook(ToBook(volumeInfo, Mode), fileName);
+            LibraryStorage.SaveBook(ToBook(volumeInfo, Mode, null), fileName);
         }
 
         private static string GetBookLabel(Volume.VolumeInfoData volumeInfo)
@@ -195,17 +225,41 @@ namespace Virtual_Bookshelf.Library
             return $"{title} by {authors} ({publishedDate})";
         }
 
-        private static Book ToBook(Volume.VolumeInfoData volumeInfo, string Mode)
+        private static Book ToBook(Volume.VolumeInfoData volumeInfo, string Mode, string? status)
         {
-            string status = Mode == "wishlist" ? "In wishlist" : "Not started";
-            return new Book
+            if (status != null)
             {
-                Title = volumeInfo.Title,
-                Author = string.Join(", ", volumeInfo.Authors ?? new List<string>()),
-                PublicationDate = DateTime.TryParse(volumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
-                PageCount = volumeInfo.PageCount ?? 0,
-                Status = status
-            };
+                return new Book
+                {
+                    Title = volumeInfo.Title,
+                    Author = string.Join(", ", volumeInfo.Authors ?? new List<string>()),
+                    PublicationDate = DateTime.TryParse(volumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
+                    PageCount = volumeInfo.PageCount ?? 0,
+                    Status = status
+                };
+            }
+            else if (Mode == "wishlist")
+            {
+                return new Book
+                {
+                    Title = volumeInfo.Title,
+                    Author = string.Join(", ", volumeInfo.Authors ?? new List<string>()),
+                    PublicationDate = DateTime.TryParse(volumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
+                    PageCount = volumeInfo.PageCount ?? 0,
+                    Status = "In wishlist"
+                };
+            }
+            else
+            {
+
+                return new Book
+                {
+                    Title = volumeInfo.Title,
+                    Author = string.Join(", ", volumeInfo.Authors ?? new List<string>()),
+                    PublicationDate = DateTime.TryParse(volumeInfo.PublishedDate, out DateTime pubDate) ? pubDate.Year : DateTime.MinValue.Year,
+                    PageCount = volumeInfo.PageCount ?? 0,
+                };
+            }
         }
     }
 }

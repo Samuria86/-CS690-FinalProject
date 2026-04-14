@@ -11,8 +11,8 @@ namespace Virtual_Bookshelf.Library
         static void Main(string[] args)
         {
             Console.WriteLine("Starting Virtual Bookshelf...");
-            string LibraryFileName = "library.json";
-            string WishlistFileName = "wishlist.json";
+            string LibraryFileName = "library.dat";
+            string WishlistFileName = "wishlist.dat";
             do
             {
                 Console.WriteLine("Displaying main menu...");
@@ -53,6 +53,7 @@ namespace Virtual_Bookshelf.Library
                     "Add book",
                     "Edit/Remove book",
                     "Search/filter books",
+                    // TODO: "Create/remove custom status labels",
                     // TODO: "Export library",
                     "Return"
                 });

@@ -24,23 +24,12 @@ namespace Virtual_Bookshelf.Library
             table.AddColumn("Author");
             table.AddColumn("Publication Date");
             table.AddColumn("Page Count");
-            if (Mode == "library")
+            table.AddColumn("Pages Read");
+            table.AddColumn("Status");
+            foreach (var book in bookList)
             {
-                table.AddColumn("Status");
-                foreach (var book in bookList)
-                {
-                    table.AddRow(book.Title, book.Author, book.PublicationDate.ToString(), book.PageCount.ToString(), book.Status);
-                }
+                table.AddRow(book.Title, book.Author, book.PublicationDate.ToString(), book.PageCount.ToString(), book.PagesRead.ToString(), book.Status);
             }
-            else
-            {
-                foreach (var book in bookList)
-                {
-                    table.AddRow(book.Title, book.Author, book.PublicationDate.ToString(), book.PageCount.ToString());
-                }
-            }
-
-
             AnsiConsole.Write(table);
         }
 
@@ -216,10 +205,28 @@ namespace Virtual_Bookshelf.Library
 
             string newStatus = Prompt.Select("Select new status", new[] { "Not started", "Reading", "Finished" });
 
+            // If changing to "Finished", set PagesRead to PageCount and DateFinished to now. If changing from "Finished" to something else, clear DateFinished and reset PagesRead.
+
+
             book.Status = newStatus;
+            if (newStatus == "Reading")
+            {
+                string pagesReadStr = Prompt.Input<string>("Pages read so far (leave blank to keep current)", defaultValue: book.PagesRead.ToString());
+                if (!string.IsNullOrWhiteSpace(pagesReadStr) && int.TryParse(pagesReadStr, out int pagesRead))
+                {
+                    book.PagesRead = pagesRead;
+                }
+            }
+            else if (newStatus == "Not started")
+            {
+                book.PagesRead = 0;
+            }
+
+
             if (newStatus == "Finished")
             {
                 book.DateFinished = DateTime.Now;
+                book.PagesRead = book.PageCount;
             }
             else
             {
@@ -299,8 +306,8 @@ namespace Virtual_Bookshelf.Library
             {
                 "Title",
                 "Author",
-                "Publication Year",
                 "Status",
+                "Filter by Year",
                 "Return"
             });
             switch (searchMenu)
@@ -308,16 +315,24 @@ namespace Virtual_Bookshelf.Library
                 case "Title":
                     Console.Write("Enter Title: ");
                     string Title = Prompt.Input<string>("Title", validators: new[] { Validators.Required() });
-                    LibrarySearch.SearchLibrary(Title, FileName, Mode);
+                    LibrarySearch.SearchLibrary(Title, FileName, "Title");
                     break;
                 case "Author":
-                    Console.WriteLine("Search by author functionality is not implemented yet.");
+                    Console.Write("Enter Author: ");
+                    string Author = Prompt.Input<string>("Author", validators: new[] { Validators.Required() });
+                    LibrarySearch.SearchLibrary(Author, FileName, "Author");
                     break;
-                case "Publication Year":
-                    Console.WriteLine("Search by publication year functionality is not implemented yet.");
+                case "Filter by Year":
+                    Console.Write("Enter Start Year: ");
+                    int StartYear = Prompt.Input<int>("Start Year", validators: new[] { Validators.Required(), Validators.RegularExpression(@"^\d{4}$", "Please enter a valid 4-digit year") });
+                    Console.Write("Enter End Year: ");
+                    int EndYear = Prompt.Input<int>("End Year", validators: new[] { Validators.Required(), Validators.RegularExpression(@"^\d{4}$", "Please enter a valid 4-digit year") });
+                    LibrarySearch.FilterBooksByYears(FileName, StartYear, EndYear);
                     break;
                 case "Status":
-                    Console.WriteLine("Search by status functionality is not implemented yet.");
+                    Console.Write("Enter Status: ");
+                    string Status = Prompt.Input<string>("Status", validators: new[] { Validators.Required() });
+                    LibrarySearch.SearchLibrary(Status, FileName, "Status");
                     break;
                 case "Return":
                     return;
