@@ -38,7 +38,7 @@ namespace Virtual_Bookshelf.Library
             SaveBookList(books, FileName);
         }
 
-        public static void UpdateBooks(List<Book> bookList, string FileName)
+        public static void UpdateBookList(List<Book> bookList, string FileName)
         {
             SaveBookList(bookList, FileName);
         }

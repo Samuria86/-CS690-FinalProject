@@ -37,6 +37,28 @@ namespace Virtual_Bookshelf.Library.Services
             return PromptForApiKey();
         }
 
+        public static string GetApiKey()
+        {
+            if (File.Exists(ApiKeyFilePath))
+            {
+                try
+                {
+                    var encryptedData = File.ReadAllBytes(ApiKeyFilePath);
+                    var key = DecryptApiKey(encryptedData);
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        return key;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed to load saved API key: {ex.Message}");
+                }
+            }
+
+            return string.Empty;
+        }
+
         private static string PromptForApiKey()
         {
             Console.WriteLine("Google Books API key is required to use book search features.");

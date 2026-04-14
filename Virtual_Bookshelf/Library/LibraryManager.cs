@@ -58,13 +58,13 @@ namespace Virtual_Bookshelf.Library
                     switch (method)
                     {
                         case "Search by ISBN":
-                            LibrarySearch.SearchBookByISBN(FileName, Mode);
+                            LibrarySearch.GoogleBooksSearch(FileName, Mode, "ISBN");
                             break;
                         case "Search by Title":
-                            LibrarySearch.SearchBookByTitle(FileName, Mode);
+                            LibrarySearch.GoogleBooksSearch(FileName, Mode, "Title");
                             break;
                         case "Search by Author":
-                            LibrarySearch.SearchBookByAuthor(FileName, Mode);
+                            LibrarySearch.GoogleBooksSearch(FileName, Mode, "Author");
                             break;
                         case "new API key":
                             string newApiKey = Prompt.Input<string>("Enter new API key", validators: new[] { Validators.Required() });
@@ -192,7 +192,7 @@ namespace Virtual_Bookshelf.Library
             if (!string.IsNullOrWhiteSpace(newPublicationDate) && DateTime.TryParse(newPublicationDate, out DateTime pubDate)) book.PublicationDate = pubDate.Year;
             if (!string.IsNullOrWhiteSpace(newPageCountStr) && int.TryParse(newPageCountStr, out int pageCount)) book.PageCount = pageCount;
 
-            LibraryStorage.UpdateBooks(bookList, FileName);
+            LibraryStorage.UpdateBookList(bookList, FileName);
             Console.WriteLine("Book updated successfully!");
         }
 
@@ -234,7 +234,7 @@ namespace Virtual_Bookshelf.Library
             }
             book.DateModified = DateTime.Now;
 
-            LibraryStorage.UpdateBooks(bookList, FileName);
+            LibraryStorage.UpdateBookList(bookList, FileName);
             Console.WriteLine("Book status updated successfully!");
         }
 
@@ -251,7 +251,7 @@ namespace Virtual_Bookshelf.Library
             }
 
             bookList.Remove(book);
-            LibraryStorage.UpdateBooks(bookList, FileName);
+            LibraryStorage.UpdateBookList(bookList, FileName);
             Console.WriteLine("Book removed successfully!");
         }
 
@@ -295,7 +295,7 @@ namespace Virtual_Bookshelf.Library
 
             // Remove from wishlist
             wishlist.Remove(book);
-            LibraryStorage.UpdateBooks(wishlist, WishlistFileName);
+            LibraryStorage.UpdateBookList(wishlist, WishlistFileName);
 
             Console.WriteLine("Book moved to library successfully!");
         }

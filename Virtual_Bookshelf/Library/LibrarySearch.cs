@@ -7,49 +7,60 @@ namespace Virtual_Bookshelf.Library
 {
     public static class LibrarySearch
     {
-        public static void SearchBookByISBN(string FileName, string Mode)
+        public static void GoogleBooksSearch(string FileName, string Mode, string Keyword)
         {
-            var isbn = Prompt.Input<string>("ISBN", validators: new[] { Validators.Required(), Validators.RegularExpression(@"^\d{10}(\d{3})?$", "Please enter a valid 10 or 13 digit ISBN") });
-            var result = SearchSingleBook("isbn", isbn, "Searching for book...");
+            string query;
+            string search_type;
+            var isbn_result = new Volume();
+            var result = new Volumes();
 
-            if (result == null)
+            if (Keyword == "ISBN")
             {
-                Console.WriteLine("No results found for the given ISBN.");
+                query = Prompt.Input<string>("ISBN", validators: new[] { Validators.Required(), Validators.RegularExpression(@"^\d{10}(\d{3})?$", "Please enter a valid 10 or 13 digit ISBN") });
+                search_type = "isbn";
+                isbn_result = SearchSingleBook(search_type, query, "Searching for book...");
+            }
+            else if (Keyword == "Title")
+            {
+                query = Prompt.Input<string>("Title", validators: new[] { Validators.Required() });
+                search_type = "intitle";
+                result = SearchBooks(search_type, query, "Searching for books...");
+            }
+            else if (Keyword == "Author")
+            {
+                query = Prompt.Input<string>("Author", validators: new[] { Validators.Required() });
+                search_type = "inauthor";
+                result = SearchBooks(search_type, query, "Searching for books...");
+            }
+            else
+            {
+                Console.WriteLine("Invalid search keyword.");
                 return;
             }
 
-            ConfirmAndSaveBook(result.VolumeInfo, FileName, Mode);
-        }
 
-        public static void SearchBookByTitle(string FileName, string Mode)
-        {
-            var title = Prompt.Input<string>("Title", validators: new[] { Validators.Required() });
-            var result = SearchBooks("intitle", title, "Searching for books...");
 
-            if (!HasResults(result))
+            if (result != null)
             {
-                Console.WriteLine("No results found for the given Title.");
-                return;
+                if (HasResults(result))
+                {
+                    TryAddSelectedBooks(result.Items, FileName, Mode);
+                }
+                else
+                {
+                    Console.WriteLine("No books found with the given query.");
+                }
             }
-
-            var titleItems = result!.Items!;
-            TryAddSelectedBooks(titleItems, FileName, Mode);
-        }
-
-        public static void SearchBookByAuthor(string FileName, string Mode)
-        {
-            var author = Prompt.Input<string>("Author", validators: new[] { Validators.Required() });
-            var result = SearchBooks("inauthor", author, "Searching for books...");
-
-            if (!HasResults(result))
+            else if (isbn_result != null && isbn_result.VolumeInfo != null)
             {
-                Console.WriteLine("No results found for the given Author.");
-                return;
+                ConfirmAndSaveBook(isbn_result.VolumeInfo, FileName, Mode);
             }
-
-            var authorItems = result!.Items!;
-            TryAddSelectedBooks(authorItems, FileName, Mode);
+            else
+            {
+                Console.WriteLine("No book found with the given ISBN.");
+            }
         }
+
 
         public static void SearchLibrary(string Query, string FileName, string Keyword)
         {
@@ -178,7 +189,7 @@ namespace Virtual_Bookshelf.Library
                     }
                 }
 
-                LibraryStorage.UpdateBooks(bookList, fileName);
+                LibraryStorage.UpdateBookList(bookList, fileName);
             }
             catch (OperationCanceledException)
             {
