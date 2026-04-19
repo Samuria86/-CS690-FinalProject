@@ -192,7 +192,7 @@ namespace Virtual_Bookshelf.Library
             if (!string.IsNullOrWhiteSpace(newPublicationDate) && DateTime.TryParse(newPublicationDate, out DateTime pubDate)) book.PublicationDate = pubDate.Year;
             if (!string.IsNullOrWhiteSpace(newPageCountStr) && int.TryParse(newPageCountStr, out int pageCount)) book.PageCount = pageCount;
 
-            LibraryStorage.UpdateBookList(bookList, FileName);
+            LibraryStorage.SaveBookList(bookList, FileName);
             Console.WriteLine("Book updated successfully!");
         }
 
@@ -209,7 +209,7 @@ namespace Virtual_Bookshelf.Library
 
 
             book.Status = newStatus;
-            if (newStatus == "Reading")
+            if (book.Status == "Reading")
             {
                 string pagesReadStr = Prompt.Input<string>("Pages read so far (leave blank to keep current)", defaultValue: book.PagesRead.ToString());
                 if (!string.IsNullOrWhiteSpace(pagesReadStr) && int.TryParse(pagesReadStr, out int pagesRead))
@@ -217,13 +217,11 @@ namespace Virtual_Bookshelf.Library
                     book.PagesRead = pagesRead;
                 }
             }
-            else if (newStatus == "Not started")
+            else if (book.Status == "Not started")
             {
                 book.PagesRead = 0;
             }
-
-
-            if (newStatus == "Finished")
+            else if (book.Status == "Finished")
             {
                 book.DateFinished = DateTime.Now;
                 book.PagesRead = book.PageCount;
@@ -233,8 +231,10 @@ namespace Virtual_Bookshelf.Library
                 book.DateFinished = null;
             }
             book.DateModified = DateTime.Now;
+            bookList.Remove(book);
+            bookList.Add(book);
 
-            LibraryStorage.UpdateBookList(bookList, FileName);
+            LibraryStorage.SaveBookList(bookList, FileName);
             Console.WriteLine("Book status updated successfully!");
         }
 
@@ -251,7 +251,7 @@ namespace Virtual_Bookshelf.Library
             }
 
             bookList.Remove(book);
-            LibraryStorage.UpdateBookList(bookList, FileName);
+            LibraryStorage.SaveBookList(bookList, FileName);
             Console.WriteLine("Book removed successfully!");
         }
 
@@ -264,6 +264,7 @@ namespace Virtual_Bookshelf.Library
             Console.WriteLine("Author: " + book.Author);
             Console.WriteLine("Publication Date: " + book.PublicationDate);
             Console.WriteLine("Page Count: " + book.PageCount);
+            Console.WriteLine("Pages Read: " + book.PagesRead);
             Console.WriteLine("Status: " + book.Status);
             Console.WriteLine("Date Added: " + book.DateAdded);
             Console.WriteLine("Date Finished: " + (book.DateFinished.HasValue ? book.DateFinished.Value.ToString() : "N/A"));
@@ -295,7 +296,7 @@ namespace Virtual_Bookshelf.Library
 
             // Remove from wishlist
             wishlist.Remove(book);
-            LibraryStorage.UpdateBookList(wishlist, WishlistFileName);
+            LibraryStorage.SaveBookList(wishlist, WishlistFileName);
 
             Console.WriteLine("Book moved to library successfully!");
         }

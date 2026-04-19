@@ -174,12 +174,6 @@ namespace Virtual_Bookshelf.Library
                 }
 
                 var bookList = LibraryStorage.LoadBookList(fileName);
-                var status = Prompt.Select("Select status for these books", new[]
-                {
-                    "Not started",
-                    "In progress",
-                    "Finished"
-                });
                 foreach (var item in items)
                 {
                     var label = GetBookLabel(item);
@@ -189,7 +183,7 @@ namespace Virtual_Bookshelf.Library
                     }
                 }
 
-                LibraryStorage.UpdateBookList(bookList, fileName);
+                LibraryStorage.SaveBookList(bookList, fileName);
             }
             catch (OperationCanceledException)
             {

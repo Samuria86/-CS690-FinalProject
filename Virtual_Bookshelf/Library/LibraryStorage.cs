@@ -38,11 +38,6 @@ namespace Virtual_Bookshelf.Library
             SaveBookList(books, FileName);
         }
 
-        public static void UpdateBookList(List<Book> bookList, string FileName)
-        {
-            SaveBookList(bookList, FileName);
-        }
-
         private static byte[] ReadFromMemoryMappedFile(string fileName)
         {
             var fileInfo = new FileInfo(fileName);
@@ -89,6 +84,7 @@ namespace Virtual_Bookshelf.Library
                 writer.Write(book.Author ?? string.Empty);
                 writer.Write(book.PublicationDate);
                 writer.Write(book.PageCount);
+                writer.Write(book.PagesRead);
                 writer.Write(book.Status ?? string.Empty);
                 writer.Write(book.DateAdded.Ticks);
                 writer.Write(book.DateFinished.HasValue);
@@ -129,6 +125,7 @@ namespace Virtual_Bookshelf.Library
                 var author = reader.ReadString();
                 var publicationDate = reader.ReadInt32();
                 var pageCount = reader.ReadInt32();
+                var pagesRead = reader.ReadInt32();
                 var status = reader.ReadString();
                 var dateAdded = new DateTime(reader.ReadInt64());
                 var hasDateFinished = reader.ReadBoolean();
@@ -141,6 +138,7 @@ namespace Virtual_Bookshelf.Library
                     Author = author,
                     PublicationDate = publicationDate,
                     PageCount = pageCount,
+                    PagesRead = pagesRead,
                     Status = status,
                     DateAdded = dateAdded,
                     DateFinished = dateFinished,
