@@ -1,5 +1,7 @@
+using System;
 using System.IO.MemoryMappedFiles;
 using System.Text;
+using System.Text.Json;
 using Virtual_Bookshelf.Library.Models;
 
 namespace Virtual_Bookshelf.Library
@@ -34,8 +36,31 @@ namespace Virtual_Bookshelf.Library
         public static void SaveBook(Book book, string FileName)
         {
             var books = LoadBookList(FileName);
+
+            if (books.Any(b => b.Title == book.Title && b.Author == book.Author && b.PublicationDate == book.PublicationDate && b.PageCount == book.PageCount))
+            {
+                throw new InvalidOperationException("Book already exists in the library.");
+            }
             books.Add(book);
             SaveBookList(books, FileName);
+        }
+
+        public static void ExportToJson(List<Book> bookList, string filePath)
+        {
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            var json = JsonSerializer.Serialize(bookList, options);
+            File.WriteAllText(filePath, json);
+        }
+
+        public static List<Book> ImportFromJson(string filePath)
+        {
+            if (!File.Exists(filePath))
+            {
+                throw new FileNotFoundException("JSON file not found.", filePath);
+            }
+
+            var json = File.ReadAllText(filePath);
+            return JsonSerializer.Deserialize<List<Book>>(json) ?? new List<Book>();
         }
 
         private static byte[] ReadFromMemoryMappedFile(string fileName)
@@ -43,7 +68,7 @@ namespace Virtual_Bookshelf.Library
             var fileInfo = new FileInfo(fileName);
             if (!fileInfo.Exists || fileInfo.Length == 0)
             {
-                return Array.Empty<byte>();
+                return [];
             }
 
             using var mmf = MemoryMappedFile.CreateFromFile(fileName, FileMode.Open, null, fileInfo.Length, MemoryMappedFileAccess.Read);

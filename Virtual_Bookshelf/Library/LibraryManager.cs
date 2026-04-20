@@ -1,3 +1,4 @@
+using System;
 using Spectre.Console;
 using Sharprompt;
 using Virtual_Bookshelf.Library.Models;
@@ -113,8 +114,15 @@ namespace Virtual_Bookshelf.Library
                     PageCount = pageCount,
                     Status = status,
                 };
-                LibraryStorage.SaveBook(book, FileName);
-                Console.WriteLine("Book added successfully!");
+                try
+                {
+                    LibraryStorage.SaveBook(book, FileName);
+                    Console.WriteLine("Book added successfully!");
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
             else
             {
@@ -339,10 +347,62 @@ namespace Virtual_Bookshelf.Library
                     return;
             }
         }
-
-        public static void ExportLibrary()
+        public static void ImportLibrary(string FileName, string Mode)
         {
-            throw new NotImplementedException("Export library functionality is not implemented yet.");
+            string filePath = Prompt.Input<string>("Enter the JSON file path to import from", validators: new[] { Validators.Required() });
+            try
+            {
+                var importedBooks = LibraryStorage.ImportFromJson(filePath);
+                if (importedBooks.Count == 0)
+                {
+                    Console.WriteLine("No books found in the JSON file.");
+                    return;
+                }
+                var existingBooks = LibraryStorage.LoadBookList(FileName);
+
+                int addedCount = 0;
+                foreach (var book in importedBooks)
+                {
+                    if (!existingBooks.Any(b => b.Title == book.Title && b.Author == book.Author && b.PublicationDate == book.PublicationDate && b.PageCount == book.PageCount))
+                    {
+                        existingBooks.Add(book);
+                        addedCount++;
+                    }
+                }
+
+                LibraryStorage.SaveBookList(existingBooks, FileName);
+                Console.WriteLine($"Import completed. {addedCount} new books added to your {Mode}.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error importing library: " + ex.Message);
+            }
+        }
+
+        public static void ExportLibrary(string FileName, string Mode)
+        {
+            var bookList = LibraryStorage.LoadBookList(FileName);
+            if (bookList.Count == 0)
+            {
+                Console.WriteLine("Your {0} is empty. Nothing to export.", Mode);
+                return;
+            }
+
+            string filePath = Prompt.Input<string>("Enter the file path to export to (e.g., library)", validators: new[] { Validators.Required() });
+            if (!filePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                filePath += ".json";
+            }
+
+            try
+            {
+                LibraryStorage.ExportToJson(bookList, filePath);
+                Console.WriteLine("Library exported successfully to " + filePath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error exporting library: " + ex.Message);
+            }
         }
 
         public static void GoalsStatisticsMenu()

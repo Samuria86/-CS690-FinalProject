@@ -1,3 +1,4 @@
+using System;
 using Google.Apis.Books.v1.Data;
 using Spectre.Console;
 using Sharprompt;
@@ -179,7 +180,15 @@ namespace Virtual_Bookshelf.Library
                     var label = GetBookLabel(item);
                     if (selections.Contains(label))
                     {
-                        bookList.Add(ToBook(item.VolumeInfo, Mode, null));
+                        var book = ToBook(item.VolumeInfo, Mode, null);
+                        if (bookList.Any(b => b.Title == book.Title && b.Author == book.Author && b.PublicationDate == book.PublicationDate && b.PageCount == book.PageCount))
+                        {
+                            Console.WriteLine($"Book '{label}' already exists in the library, skipping.");
+                        }
+                        else
+                        {
+                            bookList.Add(book);
+                        }
                     }
                 }
 
@@ -219,7 +228,15 @@ namespace Virtual_Bookshelf.Library
                 Console.WriteLine("Book not added.");
                 return;
             }
-            LibraryStorage.SaveBook(ToBook(volumeInfo, Mode, null), fileName);
+            try
+            {
+                LibraryStorage.SaveBook(ToBook(volumeInfo, Mode, null), fileName);
+                Console.WriteLine("Book added successfully!");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         private static string GetBookLabel(Volume.VolumeInfoData volumeInfo)

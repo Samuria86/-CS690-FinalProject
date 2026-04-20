@@ -54,7 +54,8 @@ namespace Virtual_Bookshelf.Library
                     "Edit/Remove book",
                     "Search/filter books",
                     // TODO: "Create/remove custom status labels",
-                    // TODO: "Export library",
+                    "Import library",
+                    "Export library",
                     "Return"
                 });
                 switch (libraryMenu)
@@ -72,7 +73,10 @@ namespace Virtual_Bookshelf.Library
                         LibraryManager.SearchFilterBooks(FileName, Mode);
                         break;
                     case "Export library":
-                        LibraryManager.ExportLibrary();
+                        LibraryManager.ExportLibrary(FileName, Mode);
+                        break;
+                    case "Import library":
+                        LibraryManager.ImportLibrary(FileName, Mode);
                         break;
                     case "Return":
                         return;
@@ -92,7 +96,8 @@ namespace Virtual_Bookshelf.Library
                     "Edit/Remove book from wishlist",
                     "Add book to main library",
                     "Search/filter wishlist",
-                    // TODO: "Export wishlist",
+                    "Import wishlist",
+                    "Export wishlist",
                     "Return"
                 });
                 switch (wishlistMenu)
@@ -111,6 +116,9 @@ namespace Virtual_Bookshelf.Library
                         break;
                     case "Search/filter wishlist":
                         LibraryManager.SearchFilterBooks(FileName, Mode);
+                        break;
+                    case "Export wishlist":
+                        LibraryManager.ExportLibrary(FileName, Mode);
                         break;
                     case "Return":
                         return;
