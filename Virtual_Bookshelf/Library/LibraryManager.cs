@@ -92,6 +92,9 @@ namespace Virtual_Bookshelf.Library
             string author = GetRequiredInput("Author");
             if (author.Equals("exit", StringComparison.OrdinalIgnoreCase)) return;
 
+            string genre = Prompt.Input<string>("Genre (optional, e.g., Fiction, Mystery, Science Fiction)", defaultValue: "Unknown");
+            if (genre.Equals("exit", StringComparison.OrdinalIgnoreCase)) return;
+
             string publicationYear = GetValidYearInput("Publication Year (yyyy)");
             if (publicationYear.Equals("exit", StringComparison.OrdinalIgnoreCase)) return;
 
@@ -105,14 +108,27 @@ namespace Virtual_Bookshelf.Library
             {
                 int pageCount = int.TryParse(pageCountStr, out int parsedCount) ? parsedCount : 0;
 
-                string status = Mode == "wishlist" ? "In wishlist" : "Not started";
+                // Get initial status from custom labels
+                var availableLabels = StatusLabelManager.GetAllStatusLabelNames(FileName);
+                string initialStatus;
+
+                if (Mode == "wishlist")
+                {
+                    initialStatus = availableLabels.FirstOrDefault(l => l.Equals("In wishlist", StringComparison.OrdinalIgnoreCase)) ?? availableLabels.FirstOrDefault() ?? "Not started";
+                }
+                else
+                {
+                    initialStatus = availableLabels.FirstOrDefault(l => l.Equals("Not started", StringComparison.OrdinalIgnoreCase)) ?? availableLabels.FirstOrDefault() ?? "Not started";
+                }
+
                 var book = new Book
                 {
                     Title = title,
                     Author = author,
+                    Genre = string.IsNullOrWhiteSpace(genre) ? "Unknown" : genre,
                     PublicationDate = int.Parse(publicationYear),
                     PageCount = pageCount,
-                    Status = status,
+                    Status = initialStatus,
                 };
                 try
                 {
@@ -164,6 +180,7 @@ namespace Virtual_Bookshelf.Library
             {
                 "Edit",
                 "Change status",
+                "Manage bookmarks",
                 "Remove",
                 "Return"
             });
@@ -175,6 +192,9 @@ namespace Virtual_Bookshelf.Library
                     break;
                 case "Change status":
                     ChangeBookStatus(selectedBook, bookList, FileName);
+                    break;
+                case "Manage bookmarks":
+                    ManageBookmarks(selectedBook, bookList, FileName);
                     break;
                 case "Remove":
                     RemoveBook(selectedBook, bookList, FileName);
@@ -211,33 +231,60 @@ namespace Virtual_Bookshelf.Library
 
             Console.WriteLine("Current status: " + book.Status);
 
-            string newStatus = Prompt.Select("Select new status", new[] { "Not started", "Reading", "Finished" });
+            // Load available custom status labels
+            var availableLabels = StatusLabelManager.GetAllStatusLabelNames(FileName);
+            if (availableLabels.Count == 0)
+            {
+                Console.WriteLine("No custom status labels found. Please create some first.");
+                return;
+            }
+
+            availableLabels.Add("Return");
+            string newStatus = Prompt.Select("Select new status", availableLabels.ToArray());
+
+            if (newStatus == "Return") return;
+
+            string previousStatus = book.Status;
+            int previousPagesRead = book.PagesRead;
 
             // If changing to "Finished", set PagesRead to PageCount and DateFinished to now. If changing from "Finished" to something else, clear DateFinished and reset PagesRead.
-
-
             book.Status = newStatus;
-            if (book.Status == "Reading")
+            if (newStatus.Equals("In progress", StringComparison.OrdinalIgnoreCase) || newStatus.Equals("Paused", StringComparison.OrdinalIgnoreCase))
             {
+
                 string pagesReadStr = Prompt.Input<string>("Pages read so far (leave blank to keep current)", defaultValue: book.PagesRead.ToString());
                 if (!string.IsNullOrWhiteSpace(pagesReadStr) && int.TryParse(pagesReadStr, out int pagesRead))
                 {
                     book.PagesRead = pagesRead;
                 }
             }
-            else if (book.Status == "Not started")
-            {
-                book.PagesRead = 0;
-            }
-            else if (book.Status == "Finished")
+
+            // Check if the new status might indicate completion
+            if (newStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase))
             {
                 book.DateFinished = DateTime.Now;
                 book.PagesRead = book.PageCount;
+            }
+            else if (newStatus.Equals("Not started", StringComparison.OrdinalIgnoreCase))
+            {
+                book.PagesRead = 0;
+                book.DateFinished = null;
             }
             else
             {
                 book.DateFinished = null;
             }
+
+            // Log the status change
+            var statusChange = new StatusChangeRecord
+            {
+                PreviousStatus = previousStatus,
+                NewStatus = newStatus,
+                ChangeDate = DateTime.Now,
+                PagesReadAtChange = book.PagesRead
+            };
+            book.StatusChanges.Add(statusChange);
+
             book.DateModified = DateTime.Now;
             bookList.Remove(book);
             bookList.Add(book);
@@ -408,6 +455,402 @@ namespace Virtual_Bookshelf.Library
         public static void GoalsStatisticsMenu()
         {
             throw new NotImplementedException("Goals & statistics menu is not implemented yet.");
+        }
+
+        public static void ManageStatusLabels(string FileName)
+        {
+            do
+            {
+                var labels = StatusLabelManager.LoadStatusLabels(FileName);
+                var labelNames = labels.Select(l => l.Name).ToList();
+                labelNames.Add("Create new label");
+                labelNames.Add("Return");
+
+                string selection = Prompt.Select("Custom Status Labels", labelNames.ToArray());
+
+                if (selection == "Return")
+                {
+                    return;
+                }
+                else if (selection == "Create new label")
+                {
+                    CreateNewStatusLabel(FileName);
+                }
+                else
+                {
+                    ManageStatusLabelDetails(FileName, selection);
+                }
+            } while (true);
+        }
+
+        public static void CreateNewStatusLabel(string FileName)
+        {
+            string name = Prompt.Input<string>("Enter label name", validators: new[] { Validators.Required() });
+            string description = Prompt.Input<string>("Enter label description (optional)", defaultValue: "");
+
+            try
+            {
+                StatusLabelManager.AddStatusLabel(FileName, name, description);
+                Console.WriteLine($"Status label '{name}' created successfully!");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        public static void ManageStatusLabelDetails(string FileName, string labelName)
+        {
+            var label = StatusLabelManager.GetStatusLabel(FileName, labelName);
+            if (label == null)
+            {
+                Console.WriteLine("Label not found.");
+                return;
+            }
+
+            Console.WriteLine($"Label: {label.Name}");
+            Console.WriteLine($"Description: {label.Description}");
+            Console.WriteLine($"Created: {label.DateCreated}");
+            Console.WriteLine($"Modified: {label.DateModified}");
+
+            string action = Prompt.Select("Action", new[] { "Edit", "Delete", "Return" });
+
+            switch (action)
+            {
+                case "Edit":
+                    EditStatusLabel(FileName, labelName);
+                    break;
+                case "Delete":
+                    DeleteStatusLabel(FileName, labelName);
+                    break;
+                case "Return":
+                    return;
+            }
+        }
+
+        public static void EditStatusLabel(string FileName, string oldName)
+        {
+            string newName = Prompt.Input<string>("Enter new label name (leave blank to keep current)", defaultValue: oldName);
+            string description = Prompt.Input<string>("Enter new description (leave blank to keep current)", defaultValue: "");
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(newName))
+                {
+                    newName = oldName;
+                }
+
+                var currentLabel = StatusLabelManager.GetStatusLabel(FileName, oldName);
+                if (currentLabel != null && string.IsNullOrWhiteSpace(description))
+                {
+                    description = currentLabel.Description;
+                }
+
+                StatusLabelManager.UpdateStatusLabel(FileName, oldName, newName, description);
+                Console.WriteLine($"Status label updated successfully!");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        public static void DeleteStatusLabel(string FileName, string labelName)
+        {
+            var confirm = Prompt.Confirm($"Are you sure you want to delete the '{labelName}' label? Books with this status will keep the label value.");
+            if (!confirm)
+            {
+                Console.WriteLine("Label not deleted.");
+                return;
+            }
+
+            try
+            {
+                StatusLabelManager.DeleteStatusLabel(FileName, labelName);
+                Console.WriteLine($"Status label '{labelName}' deleted successfully!");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        public static void ManageBookmarks(string selectedBook, List<Book> bookList, string FileName)
+        {
+            var book = bookList.FirstOrDefault(b => (b.Title + " by " + b.Author) == selectedBook);
+            if (book == null) return;
+
+            do
+            {
+                Console.WriteLine($"\nManaging bookmarks for: {book.Title}");
+                Console.WriteLine($"Bookmarks: {BookmarkManager.GetBookmarkCount(book)}/3");
+
+                var bookmarks = BookmarkManager.GetBookmarks(book);
+                var options = new List<string>();
+
+                if (bookmarks.Count > 0)
+                {
+                    foreach (var bookmark in bookmarks)
+                    {
+                        options.Add($"{bookmark.GetColorCode()} Page {bookmark.PageNumber}" +
+                            (string.IsNullOrEmpty(bookmark.Notes) ? "" : $" - {bookmark.Notes}"));
+                    }
+                }
+
+                if (BookmarkManager.GetRemainingBookmarkSlots(book) > 0)
+                {
+                    options.Add("Add bookmark");
+                }
+
+                options.Add("Return");
+
+                string action = Prompt.Select("Select bookmark to manage or action", options.ToArray());
+
+                if (action == "Return")
+                {
+                    LibraryStorage.SaveBookList(bookList, FileName);
+                    return;
+                }
+                else if (action == "Add bookmark")
+                {
+                    AddBookmarkToBook(book);
+                }
+                else
+                {
+                    // Extract page number from the selection
+                    var parts = action.Split(' ');
+                    if (int.TryParse(parts[2], out int pageNumber))
+                    {
+                        ManageBookmarkDetails(book, pageNumber);
+                    }
+                }
+            } while (true);
+        }
+
+        public static void AddBookmarkToBook(Book book)
+        {
+            string pageInput = Prompt.Input<string>("Enter page number", validators: new[] { Validators.Required() });
+            if (!int.TryParse(pageInput, out int pageNumber))
+            {
+                Console.WriteLine("Invalid page number.");
+                return;
+            }
+
+            var colorOptions = Bookmark.AvailableColors.Select(c => c.ToUpper()).ToArray();
+            string selectedColor = Prompt.Select("Select bookmark color", colorOptions);
+
+            string notes = Prompt.Input<string>("Add notes (optional)", defaultValue: "");
+
+            try
+            {
+                BookmarkManager.AddBookmark(book, pageNumber, selectedColor.ToLower(), notes);
+                Console.WriteLine($"Bookmark added at page {pageNumber}!");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        public static void ManageBookmarkDetails(Book book, int pageNumber)
+        {
+            var bookmark = BookmarkManager.GetBookmark(book, pageNumber);
+            if (bookmark == null)
+            {
+                Console.WriteLine("Bookmark not found.");
+                return;
+            }
+
+            Console.WriteLine($"Bookmark at page {pageNumber}:");
+            Console.WriteLine($"Color: {bookmark.GetColorCode()} {bookmark.Color}");
+            Console.WriteLine($"Notes: {(string.IsNullOrEmpty(bookmark.Notes) ? "None" : bookmark.Notes)}");
+            Console.WriteLine($"Created: {bookmark.DateCreated}");
+
+            string action = Prompt.Select("Action", new[] { "Edit", "Delete", "Return" });
+
+            switch (action)
+            {
+                case "Edit":
+                    EditBookmark(book, pageNumber);
+                    break;
+                case "Delete":
+                    DeleteBookmark(book, pageNumber);
+                    break;
+                case "Return":
+                    return;
+            }
+        }
+
+        public static void EditBookmark(Book book, int pageNumber)
+        {
+            var bookmark = BookmarkManager.GetBookmark(book, pageNumber);
+            if (bookmark == null) return;
+
+            var colorOptions = Bookmark.AvailableColors.Select(c => c.ToUpper()).ToArray();
+            string selectedColor = Prompt.Select("Select new bookmark color", colorOptions);
+
+            string notes = Prompt.Input<string>("Update notes (leave blank to keep current)", defaultValue: bookmark.Notes);
+
+            try
+            {
+                BookmarkManager.UpdateBookmark(book, pageNumber, selectedColor.ToLower(), notes);
+                Console.WriteLine("Bookmark updated successfully!");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        public static void DeleteBookmark(Book book, int pageNumber)
+        {
+            var confirm = Prompt.Confirm($"Delete bookmark at page {pageNumber}?");
+            if (!confirm)
+            {
+                Console.WriteLine("Bookmark not deleted.");
+                return;
+            }
+
+            try
+            {
+                BookmarkManager.RemoveBookmark(book, pageNumber);
+                Console.WriteLine("Bookmark deleted successfully!");
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+        }
+
+        public static void ViewStatistics(string FileName)
+        {
+            var bookList = LibraryStorage.LoadBookList(FileName);
+
+            if (bookList.Count == 0)
+            {
+                Console.WriteLine("Your library is empty. No statistics to display.");
+                return;
+            }
+
+            do
+            {
+                Console.Clear();
+                Console.WriteLine(StatisticsService.GetStatisticsSummary(bookList));
+
+                string action = Prompt.Select("Statistics Options", new[]
+                {
+                    "View Books Per Month",
+                    "View Books Per Year",
+                    "View Reading History",
+                    "Return"
+                });
+
+                switch (action)
+                {
+                    case "View Books Per Month":
+                        ViewBooksPerMonth(bookList);
+                        break;
+                    case "View Books Per Year":
+                        ViewBooksPerYear(bookList);
+                        break;
+                    case "View Reading History":
+                        ViewReadingHistory(bookList);
+                        break;
+                    case "Return":
+                        return;
+                }
+            } while (true);
+        }
+
+        public static void ViewBooksPerMonth(List<Book> bookList)
+        {
+            var booksPerMonth = StatisticsService.GetBooksPerMonth(bookList);
+
+            if (booksPerMonth.Count == 0)
+            {
+                Console.WriteLine("No completed books yet.");
+                return;
+            }
+
+            Console.WriteLine("\n========== BOOKS COMPLETED PER MONTH ==========");
+            foreach (var month in booksPerMonth)
+            {
+                Console.WriteLine($"{month.Key}: {month.Value} book(s)");
+            }
+            Console.WriteLine("==============================================\n");
+
+            Prompt.Input<string>("Press Enter to continue...", defaultValue: "");
+        }
+
+        public static void ViewBooksPerYear(List<Book> bookList)
+        {
+            var booksPerYear = StatisticsService.GetBooksPerYear(bookList);
+
+            if (booksPerYear.Count == 0)
+            {
+                Console.WriteLine("No completed books yet.");
+                return;
+            }
+
+            Console.WriteLine("\n========== BOOKS COMPLETED PER YEAR ==========");
+            foreach (var year in booksPerYear)
+            {
+                Console.WriteLine($"{year.Key}: {year.Value} book(s)");
+            }
+            Console.WriteLine("==============================================\n");
+
+            Prompt.Input<string>("Press Enter to continue...", defaultValue: "");
+        }
+
+        public static void ViewReadingHistory(List<Book> bookList)
+        {
+            Console.WriteLine("\n========== READING HISTORY ==========");
+
+            var completedBooks = bookList
+                .Where(b => b.StatusChanges.Any(sc =>
+                    sc.NewStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase) ||
+                    sc.NewStatus.Equals("Finished", StringComparison.OrdinalIgnoreCase)
+                ))
+                .OrderByDescending(b => b.DateFinished)
+                .ToList();
+
+            if (completedBooks.Count == 0)
+            {
+                Console.WriteLine("No completed books yet.");
+                return;
+            }
+
+            foreach (var book in completedBooks)
+            {
+                var completionRecord = book.StatusChanges.LastOrDefault(sc =>
+                    sc.NewStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase) ||
+                    sc.NewStatus.Equals("Finished", StringComparison.OrdinalIgnoreCase)
+                );
+
+                if (completionRecord != null)
+                {
+                    Console.WriteLine($"✓ {book.Title} by {book.Author}");
+                    Console.WriteLine($"  Completed: {completionRecord.ChangeDate:yyyy-MM-dd}");
+                    Console.WriteLine($"  Pages: {book.PageCount} | Genre: {book.Genre}");
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine("=====================================\n");
+
+            Prompt.Input<string>("Press Enter to continue...", defaultValue: "");
         }
     }
 }

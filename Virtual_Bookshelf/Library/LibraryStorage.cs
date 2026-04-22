@@ -107,6 +107,7 @@ namespace Virtual_Bookshelf.Library
             {
                 writer.Write(book.Title ?? string.Empty);
                 writer.Write(book.Author ?? string.Empty);
+                writer.Write(book.Genre ?? "Unknown");
                 writer.Write(book.PublicationDate);
                 writer.Write(book.PageCount);
                 writer.Write(book.PagesRead);
@@ -118,6 +119,33 @@ namespace Virtual_Bookshelf.Library
                     writer.Write(book.DateFinished.Value.Ticks);
                 }
                 writer.Write(book.DateModified.Ticks);
+
+                // Serialize Bookmarks
+                writer.Write(book.Bookmarks?.Count ?? 0);
+                if (book.Bookmarks != null)
+                {
+                    foreach (var bookmark in book.Bookmarks)
+                    {
+                        writer.Write(bookmark.PageNumber);
+                        writer.Write(bookmark.Color ?? "red");
+                        writer.Write(bookmark.Notes ?? string.Empty);
+                        writer.Write(bookmark.DateCreated.Ticks);
+                        writer.Write(bookmark.DateModified.Ticks);
+                    }
+                }
+
+                // Serialize StatusChanges
+                writer.Write(book.StatusChanges?.Count ?? 0);
+                if (book.StatusChanges != null)
+                {
+                    foreach (var statusChange in book.StatusChanges)
+                    {
+                        writer.Write(statusChange.PreviousStatus ?? string.Empty);
+                        writer.Write(statusChange.NewStatus ?? string.Empty);
+                        writer.Write(statusChange.ChangeDate.Ticks);
+                        writer.Write(statusChange.PagesReadAtChange);
+                    }
+                }
             }
 
             writer.Flush();
@@ -148,6 +176,7 @@ namespace Virtual_Bookshelf.Library
             {
                 var title = reader.ReadString();
                 var author = reader.ReadString();
+                var genre = reader.ReadString();
                 var publicationDate = reader.ReadInt32();
                 var pageCount = reader.ReadInt32();
                 var pagesRead = reader.ReadInt32();
@@ -157,10 +186,11 @@ namespace Virtual_Bookshelf.Library
                 DateTime? dateFinished = hasDateFinished ? new DateTime(reader.ReadInt64()) : null;
                 var dateModified = new DateTime(reader.ReadInt64());
 
-                books.Add(new Book
+                var book = new Book
                 {
                     Title = title,
                     Author = author,
+                    Genre = genre,
                     PublicationDate = publicationDate,
                     PageCount = pageCount,
                     PagesRead = pagesRead,
@@ -168,7 +198,47 @@ namespace Virtual_Bookshelf.Library
                     DateAdded = dateAdded,
                     DateFinished = dateFinished,
                     DateModified = dateModified
-                });
+                };
+
+                // Deserialize Bookmarks
+                var bookmarkCount = reader.ReadInt32();
+                for (int j = 0; j < bookmarkCount; j++)
+                {
+                    var pageNumber = reader.ReadInt32();
+                    var color = reader.ReadString();
+                    var notes = reader.ReadString();
+                    var dateCreated = new DateTime(reader.ReadInt64());
+                    var dateModifiedBookmark = new DateTime(reader.ReadInt64());
+
+                    book.Bookmarks.Add(new Bookmark
+                    {
+                        PageNumber = pageNumber,
+                        Color = color,
+                        Notes = notes,
+                        DateCreated = dateCreated,
+                        DateModified = dateModifiedBookmark
+                    });
+                }
+
+                // Deserialize StatusChanges
+                var statusChangeCount = reader.ReadInt32();
+                for (int j = 0; j < statusChangeCount; j++)
+                {
+                    var previousStatus = reader.ReadString();
+                    var newStatus = reader.ReadString();
+                    var changeDate = new DateTime(reader.ReadInt64());
+                    var pagesReadAtChange = reader.ReadInt32();
+
+                    book.StatusChanges.Add(new StatusChangeRecord
+                    {
+                        PreviousStatus = previousStatus,
+                        NewStatus = newStatus,
+                        ChangeDate = changeDate,
+                        PagesReadAtChange = pagesReadAtChange
+                    });
+                }
+
+                books.Add(book);
             }
 
             return books;

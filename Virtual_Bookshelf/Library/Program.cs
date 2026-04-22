@@ -20,7 +20,7 @@ namespace Virtual_Bookshelf.Library
                 {
                     "Main Library",
                     "Wishlist",
-                    // TODO: Goals & statistics
+                    "Statistics & Reading Goals",
                     "Exit"
                 });
                 Console.WriteLine($"Selected: {mainMenu}");
@@ -32,8 +32,8 @@ namespace Virtual_Bookshelf.Library
                     case "Wishlist":
                         WishlistMenu(WishlistFileName, LibraryFileName);
                         break;
-                    case "Goals & statistics":
-                        LibraryManager.GoalsStatisticsMenu();
+                    case "Statistics & Reading Goals":
+                        LibraryManager.ViewStatistics(LibraryFileName);
                         break;
                     case "Exit":
                         Console.WriteLine("Exiting the application...");
@@ -53,7 +53,8 @@ namespace Virtual_Bookshelf.Library
                     "Add book",
                     "Edit/Remove book",
                     "Search/filter books",
-                    // TODO: "Create/remove custom status labels",
+                    "View statistics",
+                    "Manage custom status labels",
                     "Import library",
                     "Export library",
                     "Return"
@@ -71,6 +72,12 @@ namespace Virtual_Bookshelf.Library
                         break;
                     case "Search/filter books":
                         LibraryManager.SearchFilterBooks(FileName, Mode);
+                        break;
+                    case "View statistics":
+                        LibraryManager.ViewStatistics(FileName);
+                        break;
+                    case "Manage custom status labels":
+                        LibraryManager.ManageStatusLabels(FileName);
                         break;
                     case "Export library":
                         LibraryManager.ExportLibrary(FileName, Mode);
