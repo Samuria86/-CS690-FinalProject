@@ -1,10 +1,9 @@
-using System;
 using Google.Apis.Books.v1.Data;
 using Spectre.Console;
 using Sharprompt;
-using Virtual_Bookshelf.Library.Models;
+using Library.Models;
 
-namespace Virtual_Bookshelf.Library
+namespace Library.Services
 {
     public static class LibrarySearch
     {

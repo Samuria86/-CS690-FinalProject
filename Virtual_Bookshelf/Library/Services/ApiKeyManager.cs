@@ -1,9 +1,7 @@
-using System;
-using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Virtual_Bookshelf.Library.Services
+namespace Library.Services
 {
     public static class ApiKeyManager
     {

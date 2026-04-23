@@ -1,7 +1,7 @@
 using Google.Apis.Books.v1;
 using Google.Apis.Services;
 
-namespace Virtual_Bookshelf.Library.Services
+namespace Library.Services
 {
     public class BookService
     {

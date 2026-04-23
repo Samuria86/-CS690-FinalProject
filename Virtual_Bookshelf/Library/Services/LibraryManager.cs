@@ -1,10 +1,7 @@
-using System;
 using Spectre.Console;
 using Sharprompt;
-using Virtual_Bookshelf.Library.Models;
-using Virtual_Bookshelf.Library.Services;
-
-namespace Virtual_Bookshelf.Library
+using Library.Models;
+namespace Library.Services
 {
     public static class LibraryManager
     {

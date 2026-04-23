@@ -1,10 +1,8 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
-using Virtual_Bookshelf.Library.Models;
 
-namespace Virtual_Bookshelf.Library.Services
+using System.Text.Json;
+using Library.Models;
+
+namespace Library.Services
 {
     public static class StatusLabelManager
     {

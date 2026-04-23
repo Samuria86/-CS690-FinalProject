@@ -1,10 +1,9 @@
-using System;
 using System.IO.MemoryMappedFiles;
 using System.Text;
 using System.Text.Json;
-using Virtual_Bookshelf.Library.Models;
+using Library.Models;
 
-namespace Virtual_Bookshelf.Library
+namespace Library.Services
 {
     public static class LibraryStorage
     {

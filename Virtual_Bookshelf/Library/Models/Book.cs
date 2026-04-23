@@ -1,4 +1,4 @@
-namespace Virtual_Bookshelf.Library.Models
+namespace Library.Models
 {
     public class Book
     {
