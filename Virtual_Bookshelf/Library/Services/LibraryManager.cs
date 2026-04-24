@@ -226,7 +226,7 @@ namespace Library.Services
 
             Console.WriteLine("Current status: " + book.Status);
 
-            // Load available custom status labels
+            // Load available status labels
             var availableLabels = StatusLabelManager.GetAllStatusLabelNames(FileName);
             if (availableLabels.Count == 0)
             {
@@ -248,6 +248,15 @@ namespace Library.Services
             {
 
                 string pagesReadStr = Prompt.Input<string>("Pages read so far (leave blank to keep current)", defaultValue: book.PagesRead.ToString());
+                if (book.PagesRead > int.Parse(pagesReadStr))
+                {
+                    bool confirm = Prompt.Confirm("Warning: The number of pages read is less than the previous value. Continue?");
+                    if (!confirm)
+                    {
+                        Console.WriteLine("Status change cancelled.");
+                        return;
+                    }
+                }
                 if (!string.IsNullOrWhiteSpace(pagesReadStr) && int.TryParse(pagesReadStr, out int pagesRead))
                 {
                     book.PagesRead = pagesRead;
@@ -293,7 +302,7 @@ namespace Library.Services
             var book = bookList.FirstOrDefault(b => (b.Title + " by " + b.Author) == selectedBook);
             if (book == null) return;
 
-            var confirm = Prompt.Confirm("Are you sure you want to remove this book?");
+            bool confirm = Prompt.Confirm("Are you sure you want to remove this book?");
             if (!confirm)
             {
                 Console.WriteLine("Book not removed.");
@@ -461,7 +470,7 @@ namespace Library.Services
                 labelNames.Add("Create new label");
                 labelNames.Add("Return");
 
-                string selection = Prompt.Select("Custom Status Labels", labelNames.ToArray());
+                string selection = Prompt.Select("Status Labels", labelNames.ToArray());
 
                 if (selection == "Return")
                 {
@@ -864,7 +873,7 @@ namespace Library.Services
             var endDate = PromptForDate("Enter end date");
 
             // Set endDate to the last day of the end month
-            endDate = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
+            endDate = new DateTime(endDate.Year, 12, DateTime.DaysInMonth(endDate.Year, 12));
 
             if (endDate < startDate)
             {
@@ -894,6 +903,10 @@ namespace Library.Services
             }
 
             string filePath = Prompt.Input<string>("Enter the CSV file path to export to (e.g., reading_stats.csv)", validators: new[] { Validators.Required() });
+            if (!filePath.EndsWith(".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                filePath += ".csv";
+            }
 
             try
             {
@@ -929,21 +942,14 @@ namespace Library.Services
             while (true)
             {
                 var year = Prompt.Input<int>($"{promptText} - Enter year (e.g., 2024)", validators: new[] { Validators.Required() });
-                var month = Prompt.Input<int>($"{promptText} - Enter month (1-12)", validators: new[] { Validators.Required() });
-
-                if (month < 1 || month > 12)
-                {
-                    Console.WriteLine("Month must be between 1 and 12.");
-                    continue;
-                }
 
                 try
                 {
-                    return new DateTime(year, month, 1);
+                    return new DateTime(year, 1, 1);
                 }
                 catch
                 {
-                    Console.WriteLine("Invalid year/month combination.");
+                    Console.WriteLine("Invalid year.");
                 }
             }
         }

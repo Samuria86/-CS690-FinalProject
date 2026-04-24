@@ -74,188 +74,33 @@ namespace Library
                         LibraryManager.ViewStatistics(FileName);
                         break;
                     case "View weekly summary":
-                        HandleWeeklySummary(books);
+                        GoalsService.HandleWeeklySummary(books);
                         break;
                     case "Set daily page goal":
-                        HandleDailyPageGoal(books);
+                        GoalsService.HandleDailyPageGoal(books);
                         break;
                     case "Set weekly page goal":
-                        HandleWeeklyPageGoal(books);
+                        GoalsService.HandleWeeklyPageGoal(books);
                         break;
                     case "Set monthly book goal":
-                        HandleMonthlyBookGoal(books);
+                        GoalsService.HandleMonthlyBookGoal(books);
                         break;
                     case "Set yearly book goal":
-                        HandleYearlyBookGoal(books);
+                        GoalsService.HandleYearlyBookGoal(books);
                         break;
                     case "View active goals":
                         GoalsService.DisplayActiveGoals(books);
                         break;
                     case "Edit active goals":
-                        HandleEditActiveGoals(books);
+                        GoalsService.HandleEditActiveGoals(books);
                         break;
                     case "Clear all goals":
-                        HandleClearAllGoals();
+                        GoalsService.HandleClearAllGoals();
                         break;
                     case "Return":
                         return;
                 }
             } while (true);
-        }
-
-        static void HandleDailyPageGoal(List<Book> books)
-        {
-            int pageGoal = Prompt.Input<int>("Enter daily page goal (pages)");
-            if (pageGoal <= 0)
-            {
-                Console.WriteLine("Goal must be greater than 0.");
-                return;
-            }
-            GoalsService.SetDailyPageGoal(books, pageGoal);
-            // Save goal to persistent storage
-            var activeGoal = GoalsStorage.GetActiveGoal();
-            if (activeGoal != null)
-            {
-                activeGoal.DailyPageGoal = pageGoal;
-                GoalsStorage.UpdateGoal(activeGoal);
-            }
-            else
-            {
-                GoalsStorage.AddGoal(new ReadingGoal { DailyPageGoal = pageGoal });
-            }
-            Console.WriteLine("Daily page goal saved successfully!");
-        }
-
-        static void HandleWeeklyPageGoal(List<Book> books)
-        {
-            int pageGoal = Prompt.Input<int>("Enter weekly page goal (pages)");
-            if (pageGoal <= 0)
-            {
-                Console.WriteLine("Goal must be greater than 0.");
-                return;
-            }
-            GoalsService.SetWeeklyPageGoal(books, pageGoal);
-            // Save goal to persistent storage
-            var activeGoal = GoalsStorage.GetActiveGoal();
-            if (activeGoal != null)
-            {
-                activeGoal.WeeklyPageGoal = pageGoal;
-                GoalsStorage.UpdateGoal(activeGoal);
-            }
-            else
-            {
-                GoalsStorage.AddGoal(new ReadingGoal { WeeklyPageGoal = pageGoal });
-            }
-            Console.WriteLine("Weekly page goal saved successfully!");
-        }
-
-        static void HandleMonthlyBookGoal(List<Book> books)
-        {
-            int bookGoal = Prompt.Input<int>("Enter monthly book goal (books)");
-            if (bookGoal <= 0)
-            {
-                Console.WriteLine("Goal must be greater than 0.");
-                return;
-            }
-            GoalsService.SetMonthlyReadingGoal(books, bookGoal);
-            // Save goal to persistent storage
-            var activeGoal = GoalsStorage.GetActiveGoal();
-            if (activeGoal != null)
-            {
-                activeGoal.MonthlyBookGoal = bookGoal;
-                GoalsStorage.UpdateGoal(activeGoal);
-            }
-            else
-            {
-                GoalsStorage.AddGoal(new ReadingGoal { MonthlyBookGoal = bookGoal });
-            }
-            Console.WriteLine("Monthly book goal saved successfully!");
-        }
-
-        static void HandleYearlyBookGoal(List<Book> books)
-        {
-            int bookGoal = Prompt.Input<int>("Enter yearly book goal (books)");
-            if (bookGoal <= 0)
-            {
-                Console.WriteLine("Goal must be greater than 0.");
-                return;
-            }
-            GoalsService.SetYearlyReadingGoal(books, bookGoal);
-            // Save goal to persistent storage
-            var activeGoal = GoalsStorage.GetActiveGoal();
-            if (activeGoal != null)
-            {
-                activeGoal.YearlyBookGoal = bookGoal;
-                GoalsStorage.UpdateGoal(activeGoal);
-            }
-            else
-            {
-                GoalsStorage.AddGoal(new ReadingGoal { YearlyBookGoal = bookGoal });
-            }
-            Console.WriteLine("Yearly book goal saved successfully!");
-        }
-
-        static void HandleWeeklySummary(List<Book> books)
-        {
-            var activeGoal = GoalsStorage.GetActiveGoal();
-            int? weeklyPageGoal = activeGoal?.WeeklyPageGoal;
-            int? monthlyBookGoal = activeGoal?.MonthlyBookGoal;
-
-            GoalsService.DisplayWeeklySummary(books, weeklyPageGoal, monthlyBookGoal);
-        }
-
-        static void HandleEditActiveGoals(List<Book> books)
-        {
-            var activeGoal = GoalsStorage.GetActiveGoal();
-            if (activeGoal == null)
-            {
-                Console.WriteLine("No active reading goals found. Set a goal first.");
-                return;
-            }
-
-            Console.WriteLine("Editing active reading goals. Leave blank to keep current values.");
-
-            var dailyGoal = Prompt.Input<string>($"Daily page goal ({activeGoal.DailyPageGoal?.ToString() ?? "none"}):");
-            if (!string.IsNullOrWhiteSpace(dailyGoal) && int.TryParse(dailyGoal, out var dailyValue) && dailyValue > 0)
-            {
-                activeGoal.DailyPageGoal = dailyValue;
-            }
-
-            var weeklyGoal = Prompt.Input<string>($"Weekly page goal ({activeGoal.WeeklyPageGoal?.ToString() ?? "none"}):");
-            if (!string.IsNullOrWhiteSpace(weeklyGoal) && int.TryParse(weeklyGoal, out var weeklyValue) && weeklyValue > 0)
-            {
-                activeGoal.WeeklyPageGoal = weeklyValue;
-            }
-
-            var monthlyGoal = Prompt.Input<string>($"Monthly book goal ({activeGoal.MonthlyBookGoal?.ToString() ?? "none"}):");
-            if (!string.IsNullOrWhiteSpace(monthlyGoal) && int.TryParse(monthlyGoal, out var monthlyValue) && monthlyValue > 0)
-            {
-                activeGoal.MonthlyBookGoal = monthlyValue;
-            }
-
-            var yearlyGoal = Prompt.Input<string>($"Yearly book goal ({activeGoal.YearlyBookGoal?.ToString() ?? "none"}):");
-            if (!string.IsNullOrWhiteSpace(yearlyGoal) && int.TryParse(yearlyGoal, out var yearlyValue) && yearlyValue > 0)
-            {
-                activeGoal.YearlyBookGoal = yearlyValue;
-            }
-
-            activeGoal.LastModifiedDate = DateTime.Now;
-            GoalsStorage.UpdateGoal(activeGoal);
-            GoalsService.DisplayActiveGoals(books);
-            Console.WriteLine("Active reading goals updated successfully.");
-        }
-
-        static void HandleClearAllGoals()
-        {
-            var confirm = Prompt.Confirm("Are you sure you want to clear all saved reading goals?", defaultValue: false);
-            if (!confirm)
-            {
-                Console.WriteLine("Clear goals canceled.");
-                return;
-            }
-
-            GoalsStorage.ClearAllGoals();
-            Console.WriteLine("All reading goals have been cleared.");
         }
 
         static void MainLibraryMenu(string FileName)
@@ -269,8 +114,7 @@ namespace Library
                     "Add book",
                     "Edit/Remove book",
                     "Search/filter books",
-                    "View statistics",
-                    "Manage custom status labels",
+                    "Manage status labels",
                     "Import library",
                     "Export library",
                     "Return"
@@ -289,10 +133,7 @@ namespace Library
                     case "Search/filter books":
                         LibraryManager.SearchFilterBooks(FileName, Mode);
                         break;
-                    case "View statistics":
-                        LibraryManager.ViewStatistics(FileName);
-                        break;
-                    case "Manage custom status labels":
+                    case "Manage status labels":
                         LibraryManager.ManageStatusLabels(FileName);
                         break;
                     case "Export library":

@@ -62,11 +62,9 @@ namespace Library.Services
         {
             var defaultLabels = new List<StatusLabel>
             {
-                new StatusLabel { Name = "Not started", Description = "Haven't started reading yet" },
-                new StatusLabel { Name = "In progress", Description = "Currently reading" },
-                new StatusLabel { Name = "Completed", Description = "Finished reading" },
-                new StatusLabel { Name = "Paused", Description = "Temporarily paused" },
-                new StatusLabel { Name = "DNF", Description = "Did not finish" }
+                new() { Name = "Not started", Description = "Haven't started reading yet" },
+                new() { Name = "In progress", Description = "Currently reading" },
+                new() { Name = "Completed", Description = "Finished reading" },
             };
 
             SaveStatusLabels(defaultLabels, libraryFileName);

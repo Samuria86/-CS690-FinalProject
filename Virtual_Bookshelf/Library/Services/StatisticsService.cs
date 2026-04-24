@@ -99,9 +99,9 @@ namespace Library.Services
 
             return result;
         }
-        /// <summary>
+
         /// Get books completed per month (dictionary with month/year as key).
-        /// </summary>
+
         public static Dictionary<string, int> GetBooksPerMonth(List<Book> books)
         {
             var result = new Dictionary<string, int>();
@@ -124,9 +124,9 @@ namespace Library.Services
             return result;
         }
 
-        /// <summary>
+
         /// Get books completed per year (dictionary with year as key).
-        /// </summary>
+
         public static Dictionary<int, int> GetBooksPerYear(List<Book> books)
         {
             var result = new Dictionary<int, int>();
@@ -147,10 +147,10 @@ namespace Library.Services
             return result;
         }
 
-        /// <summary>
+
         /// Get current reading streak (consecutive days with reading activity).
         /// A reading activity is defined as any status change that indicates reading.
-        /// </summary>
+
         public static int GetReadingStreak(List<Book> books)
         {
             if (books.Count == 0) return 0;
@@ -192,9 +192,9 @@ namespace Library.Services
             return streak;
         }
 
-        /// <summary>
+
         /// Get statistics summary as formatted string.
-        /// </summary>
+
         public static string GetStatisticsSummary(List<Book> books)
         {
             var summary = new System.Text.StringBuilder();

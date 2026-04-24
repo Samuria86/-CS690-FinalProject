@@ -12,14 +12,14 @@ namespace Library.Services
 
         private const string GoalsFileName = "goals.dat";
 
-        /// <summary>
+
         /// Get the file path for goal storage
-        /// </summary>
+
         public static string GetFilePath() => GoalsFileName;
 
-        /// <summary>
+
         /// Load all reading goals from storage
-        /// </summary>
+
         public static List<ReadingGoal> LoadGoals()
         {
             if (!File.Exists(GoalsFileName))
@@ -36,27 +36,27 @@ namespace Library.Services
             return JsonSerializer.Deserialize<List<ReadingGoal>>(data) ?? new List<ReadingGoal>();
         }
 
-        /// <summary>
+
         /// Get the active reading goal (most recent)
-        /// </summary>
+
         public static ReadingGoal? GetActiveGoal()
         {
             var goals = LoadGoals();
             return goals.OrderByDescending(g => g.LastModifiedDate).FirstOrDefault();
         }
 
-        /// <summary>
+
         /// Save all reading goals to storage
-        /// </summary>
+
         public static void SaveGoals(List<ReadingGoal> goals)
         {
             string jsonData = JsonSerializer.Serialize(goals, s_writeOptions);
             File.WriteAllText(GoalsFileName, jsonData);
         }
 
-        /// <summary>
+
         /// Add a new reading goal
-        /// </summary>
+
         public static void AddGoal(ReadingGoal goal)
         {
             var goals = LoadGoals();
@@ -67,9 +67,9 @@ namespace Library.Services
             SaveGoals(goals);
         }
 
-        /// <summary>
+
         /// Update an existing reading goal
-        /// </summary>
+
         public static void UpdateGoal(ReadingGoal goal)
         {
             var goals = LoadGoals();
@@ -83,9 +83,9 @@ namespace Library.Services
             }
         }
 
-        /// <summary>
+
         /// Delete a reading goal by ID
-        /// </summary>
+
         public static void DeleteGoal(int goalId)
         {
             var goals = LoadGoals();
@@ -97,17 +97,17 @@ namespace Library.Services
             }
         }
 
-        /// <summary>
+
         /// Clear all reading goals
-        /// </summary>
+
         public static void ClearAllGoals()
         {
             SaveGoals([]);
         }
 
-        /// <summary>
+
         /// Create or update the current active goal
-        /// </summary>
+
         public static void SetActiveGoal(int? dailyPageGoal, int? weeklyPageGoal, int? monthlyBookGoal, int? yearlyBookGoal)
         {
             var activeGoal = GetActiveGoal();
