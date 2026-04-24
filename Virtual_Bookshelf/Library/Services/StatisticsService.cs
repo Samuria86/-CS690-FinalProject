@@ -99,21 +99,6 @@ namespace Library.Services
 
             return result;
         }
-
-
-        /// Get the most read genre based on pages read.
-        public static (string genre, int pageCount)? GetMostReadGenre(List<Book> books)
-        {
-            var genrePages = books
-                .Where(b => !b.Genre.Equals("Unknown", StringComparison.OrdinalIgnoreCase))
-                .GroupBy(b => b.Genre)
-                .Select(g => (genre: g.Key, pages: g.Sum(b => b.PagesRead)))
-                .OrderByDescending(x => x.pages)
-                .FirstOrDefault();
-
-            return genrePages.pages > 0 ? genrePages : null;
-        }
-
         /// <summary>
         /// Get books completed per month (dictionary with month/year as key).
         /// </summary>
@@ -220,12 +205,6 @@ namespace Library.Services
             summary.AppendLine($"Total Pages Read: {GetTotalPagesRead(books)}");
             summary.AppendLine($"Books Completed This Month: {GetBooksThisMonth(books)}");
             summary.AppendLine($"Reading Streak (days): {GetReadingStreak(books)}");
-
-            var mostRead = GetMostReadGenre(books);
-            if (mostRead.HasValue)
-            {
-                summary.AppendLine($"Most Read Genre: {mostRead.Value.genre} ({mostRead.Value.pageCount} pages)");
-            }
 
             summary.AppendLine("========================================\n");
             return summary.ToString();

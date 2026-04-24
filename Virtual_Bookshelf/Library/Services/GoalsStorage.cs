@@ -5,6 +5,11 @@ namespace Library.Services
 {
     public static class GoalsStorage
     {
+        private static readonly JsonSerializerOptions s_writeOptions = new()
+        {
+            WriteIndented = true
+        };
+
         private const string GoalsFileName = "goals.dat";
 
         /// <summary>
@@ -45,7 +50,7 @@ namespace Library.Services
         /// </summary>
         public static void SaveGoals(List<ReadingGoal> goals)
         {
-            string jsonData = JsonSerializer.Serialize(goals, new JsonSerializerOptions { WriteIndented = true });
+            string jsonData = JsonSerializer.Serialize(goals, s_writeOptions);
             File.WriteAllText(GoalsFileName, jsonData);
         }
 
@@ -106,7 +111,7 @@ namespace Library.Services
         public static void SetActiveGoal(int? dailyPageGoal, int? weeklyPageGoal, int? monthlyBookGoal, int? yearlyBookGoal)
         {
             var activeGoal = GetActiveGoal();
-            
+
             if (activeGoal != null)
             {
                 activeGoal.DailyPageGoal = dailyPageGoal;

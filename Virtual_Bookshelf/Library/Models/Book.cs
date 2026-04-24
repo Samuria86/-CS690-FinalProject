@@ -4,7 +4,6 @@ namespace Library.Models
     {
         public string Title { get; set; } = string.Empty;
         public string Author { get; set; } = string.Empty;
-        public string Genre { get; set; } = "Unknown";
         public int PublicationDate { get; set; } = DateTime.MinValue.Year;
         public int PageCount { get; set; } = 0;
         public int PagesRead { get; set; } = 0;

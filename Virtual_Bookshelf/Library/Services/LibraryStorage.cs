@@ -7,6 +7,10 @@ namespace Library.Services
 {
     public static class LibraryStorage
     {
+        private static readonly JsonSerializerOptions s_writeOptions = new()
+        {
+            WriteIndented = true
+        };
         private const string StorageFileMagic = "VBKT";
         private const int StorageFileVersion = 1;
 
@@ -14,13 +18,13 @@ namespace Library.Services
         {
             if (!File.Exists(FileName))
             {
-                return new List<Book>();
+                return [];
             }
 
             var data = ReadFromMemoryMappedFile(FileName);
             if (data.Length == 0)
             {
-                return new List<Book>();
+                return [];
             }
 
             return DeserializeBookList(data);
@@ -46,8 +50,7 @@ namespace Library.Services
 
         public static void ExportToJson(List<Book> bookList, string filePath)
         {
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            var json = JsonSerializer.Serialize(bookList, options);
+            var json = JsonSerializer.Serialize(bookList, s_writeOptions);
             File.WriteAllText(filePath, json);
         }
 
@@ -106,7 +109,6 @@ namespace Library.Services
             {
                 writer.Write(book.Title ?? string.Empty);
                 writer.Write(book.Author ?? string.Empty);
-                writer.Write(book.Genre ?? "Unknown");
                 writer.Write(book.PublicationDate);
                 writer.Write(book.PageCount);
                 writer.Write(book.PagesRead);
@@ -160,13 +162,13 @@ namespace Library.Services
             var magic = Encoding.ASCII.GetString(magicBytes);
             if (magic != StorageFileMagic)
             {
-                return new List<Book>();
+                return [];
             }
 
             var version = reader.ReadInt32();
             if (version != StorageFileVersion)
             {
-                return new List<Book>();
+                return [];
             }
 
             var count = reader.ReadInt32();
@@ -175,7 +177,6 @@ namespace Library.Services
             {
                 var title = reader.ReadString();
                 var author = reader.ReadString();
-                var genre = reader.ReadString();
                 var publicationDate = reader.ReadInt32();
                 var pageCount = reader.ReadInt32();
                 var pagesRead = reader.ReadInt32();
@@ -189,7 +190,6 @@ namespace Library.Services
                 {
                     Title = title,
                     Author = author,
-                    Genre = genre,
                     PublicationDate = publicationDate,
                     PageCount = pageCount,
                     PagesRead = pagesRead,

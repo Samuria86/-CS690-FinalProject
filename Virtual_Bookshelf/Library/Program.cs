@@ -53,7 +53,7 @@ namespace Library
             do
             {
                 var books = LibraryStorage.LoadBookList(FileName);
-                
+
                 string goalsMenu = Prompt.Select("Statistics & Reading Goals", new[]
                 {
                     "View statistics",
@@ -61,7 +61,7 @@ namespace Library
                     "Set daily page goal",
                     "Set weekly page goal",
                     "Set monthly book goal",
-                    "Set yearly book goal",
+                    // "Set yearly book goal",
                     "View active goals",
                     "Edit active goals",
                     "Clear all goals",
@@ -197,31 +197,65 @@ namespace Library
 
         static void HandleWeeklySummary(List<Book> books)
         {
-            var includeGoals = Prompt.Confirm("Include goal targets in summary?", defaultValue: true);
-            
-            if (includeGoals)
+            var activeGoal = GoalsStorage.GetActiveGoal();
+            int? weeklyPageGoal = activeGoal?.WeeklyPageGoal;
+            int? monthlyBookGoal = activeGoal?.MonthlyBookGoal;
+
+            GoalsService.DisplayWeeklySummary(books, weeklyPageGoal, monthlyBookGoal);
+        }
+
+        static void HandleEditActiveGoals(List<Book> books)
+        {
+            var activeGoal = GoalsStorage.GetActiveGoal();
+            if (activeGoal == null)
             {
-                int? weeklyPageGoal = null;
-                int? monthlyBookGoal = null;
-
-                var hasPageGoal = Prompt.Confirm("Do you have a weekly page goal?", defaultValue: false);
-                if (hasPageGoal)
-                {
-                    weeklyPageGoal = Prompt.Input<int>("Enter weekly page goal (pages)");
-                }
-
-                var hasBookGoal = Prompt.Confirm("Do you have a monthly book goal?", defaultValue: false);
-                if (hasBookGoal)
-                {
-                    monthlyBookGoal = Prompt.Input<int>("Enter monthly book goal (books)");
-                }
-
-                GoalsService.DisplayWeeklySummary(books, weeklyPageGoal, monthlyBookGoal);
+                Console.WriteLine("No active reading goals found. Set a goal first.");
+                return;
             }
-            else
+
+            Console.WriteLine("Editing active reading goals. Leave blank to keep current values.");
+
+            var dailyGoal = Prompt.Input<string>($"Daily page goal ({activeGoal.DailyPageGoal?.ToString() ?? "none"}):");
+            if (!string.IsNullOrWhiteSpace(dailyGoal) && int.TryParse(dailyGoal, out var dailyValue) && dailyValue > 0)
             {
-                GoalsService.DisplayWeeklySummary(books);
+                activeGoal.DailyPageGoal = dailyValue;
             }
+
+            var weeklyGoal = Prompt.Input<string>($"Weekly page goal ({activeGoal.WeeklyPageGoal?.ToString() ?? "none"}):");
+            if (!string.IsNullOrWhiteSpace(weeklyGoal) && int.TryParse(weeklyGoal, out var weeklyValue) && weeklyValue > 0)
+            {
+                activeGoal.WeeklyPageGoal = weeklyValue;
+            }
+
+            var monthlyGoal = Prompt.Input<string>($"Monthly book goal ({activeGoal.MonthlyBookGoal?.ToString() ?? "none"}):");
+            if (!string.IsNullOrWhiteSpace(monthlyGoal) && int.TryParse(monthlyGoal, out var monthlyValue) && monthlyValue > 0)
+            {
+                activeGoal.MonthlyBookGoal = monthlyValue;
+            }
+
+            var yearlyGoal = Prompt.Input<string>($"Yearly book goal ({activeGoal.YearlyBookGoal?.ToString() ?? "none"}):");
+            if (!string.IsNullOrWhiteSpace(yearlyGoal) && int.TryParse(yearlyGoal, out var yearlyValue) && yearlyValue > 0)
+            {
+                activeGoal.YearlyBookGoal = yearlyValue;
+            }
+
+            activeGoal.LastModifiedDate = DateTime.Now;
+            GoalsStorage.UpdateGoal(activeGoal);
+            GoalsService.DisplayActiveGoals(books);
+            Console.WriteLine("Active reading goals updated successfully.");
+        }
+
+        static void HandleClearAllGoals()
+        {
+            var confirm = Prompt.Confirm("Are you sure you want to clear all saved reading goals?", defaultValue: false);
+            if (!confirm)
+            {
+                Console.WriteLine("Clear goals canceled.");
+                return;
+            }
+
+            GoalsStorage.ClearAllGoals();
+            Console.WriteLine("All reading goals have been cleared.");
         }
 
         static void MainLibraryMenu(string FileName)

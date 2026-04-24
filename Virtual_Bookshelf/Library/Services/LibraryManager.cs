@@ -1,6 +1,8 @@
 using Spectre.Console;
 using Sharprompt;
+using System.IO;
 using Library.Models;
+using System.Text;
 namespace Library.Services
 {
     public static class LibraryManager
@@ -89,9 +91,6 @@ namespace Library.Services
             string author = GetRequiredInput("Author");
             if (author.Equals("exit", StringComparison.OrdinalIgnoreCase)) return;
 
-            string genre = Prompt.Input<string>("Genre (optional, e.g., Fiction, Mystery, Science Fiction)", defaultValue: "Unknown");
-            if (genre.Equals("exit", StringComparison.OrdinalIgnoreCase)) return;
-
             string publicationYear = GetValidYearInput("Publication Year (yyyy)");
             if (publicationYear.Equals("exit", StringComparison.OrdinalIgnoreCase)) return;
 
@@ -122,7 +121,6 @@ namespace Library.Services
                 {
                     Title = title,
                     Author = author,
-                    Genre = string.IsNullOrWhiteSpace(genre) ? "Unknown" : genre,
                     PublicationDate = int.Parse(publicationYear),
                     PageCount = pageCount,
                     Status = initialStatus,
@@ -751,6 +749,7 @@ namespace Library.Services
                     "View Books Per Month",
                     "View Books Per Year",
                     "View Reading History",
+                    "Export reading stats to CSV",
                     "Return"
                 });
 
@@ -764,6 +763,9 @@ namespace Library.Services
                         break;
                     case "View Reading History":
                         ViewReadingHistory(bookList);
+                        break;
+                    case "Export reading stats to CSV":
+                        ExportReadingStatisticsToCsv(bookList);
                         break;
                     case "Return":
                         return;
@@ -840,7 +842,7 @@ namespace Library.Services
                 {
                     Console.WriteLine($"✓ {book.Title} by {book.Author}");
                     Console.WriteLine($"  Completed: {completionRecord.ChangeDate:yyyy-MM-dd}");
-                    Console.WriteLine($"  Pages: {book.PageCount} | Genre: {book.Genre}");
+                    Console.WriteLine($"  Pages: {book.PageCount}");
                     Console.WriteLine();
                 }
             }
@@ -848,6 +850,118 @@ namespace Library.Services
             Console.WriteLine("=====================================\n");
 
             Prompt.Input<string>("Press Enter to continue...", defaultValue: "");
+        }
+        public static void ExportReadingStatisticsToCsv(List<Book> bookList)
+        {
+            Console.WriteLine("\n========== EXPORT READING STATISTICS ==========");
+            if (bookList.Count == 0)
+            {
+                Console.WriteLine("Your library is empty. No statistics to export.");
+                return;
+            }
+
+            var startDate = PromptForDate("Enter start date");
+            var endDate = PromptForDate("Enter end date");
+
+            // Set endDate to the last day of the end month
+            endDate = new DateTime(endDate.Year, endDate.Month, DateTime.DaysInMonth(endDate.Year, endDate.Month));
+
+            if (endDate < startDate)
+            {
+                Console.WriteLine("End date must be the same as or after the start date.");
+                return;
+            }
+
+            var completedBooks = bookList
+                .Select(book => new
+                {
+                    Book = book,
+                    Completion = book.StatusChanges
+                        .Where(sc => sc.NewStatus.Equals("Completed", StringComparison.OrdinalIgnoreCase) ||
+                                     sc.NewStatus.Equals("Finished", StringComparison.OrdinalIgnoreCase))
+                        .Where(sc => sc.ChangeDate.Date >= startDate.Date && sc.ChangeDate.Date <= endDate.Date)
+                        .OrderBy(sc => sc.ChangeDate)
+                        .LastOrDefault()
+                })
+                .Where(x => x.Completion != null)
+                .OrderBy(x => x.Completion!.ChangeDate)
+                .ToList();
+
+            if (completedBooks.Count == 0)
+            {
+                Console.WriteLine("No completed books found in the selected date range.");
+                return;
+            }
+
+            string filePath = Prompt.Input<string>("Enter the CSV file path to export to (e.g., reading_stats.csv)", validators: new[] { Validators.Required() });
+
+            try
+            {
+                using var writer = new StreamWriter(filePath, append: false, Encoding.UTF8);
+                writer.WriteLine("Title,Author,PageCount,PagesRead,CompletionDate,DateAdded,DateFinished");
+
+                foreach (var entry in completedBooks)
+                {
+                    var book = entry.Book;
+                    var completionDate = entry.Completion!.ChangeDate.Date;
+                    var dateFinishedText = book.DateFinished.HasValue ? book.DateFinished.Value.ToString("yyyy-MM-dd") : string.Empty;
+
+                    writer.WriteLine(string.Join(",",
+                        EscapeCsvValue(book.Title),
+                        EscapeCsvValue(book.Author),
+                        book.PageCount.ToString(),
+                        book.PagesRead.ToString(),
+                        completionDate.ToString("yyyy-MM-dd"),
+                        book.DateAdded.ToString("yyyy-MM-dd"),
+                        EscapeCsvValue(dateFinishedText)));
+                }
+
+                Console.WriteLine($"Export complete. {completedBooks.Count} records written to '{filePath}'.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error exporting CSV: {ex.Message}");
+            }
+        }
+
+        private static DateTime PromptForDate(string promptText)
+        {
+            while (true)
+            {
+                var year = Prompt.Input<int>($"{promptText} - Enter year (e.g., 2024)", validators: new[] { Validators.Required() });
+                var month = Prompt.Input<int>($"{promptText} - Enter month (1-12)", validators: new[] { Validators.Required() });
+
+                if (month < 1 || month > 12)
+                {
+                    Console.WriteLine("Month must be between 1 and 12.");
+                    continue;
+                }
+
+                try
+                {
+                    return new DateTime(year, month, 1);
+                }
+                catch
+                {
+                    Console.WriteLine("Invalid year/month combination.");
+                }
+            }
+        }
+
+        private static string EscapeCsvValue(string? value)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return string.Empty;
+            }
+
+            var escaped = value.Replace("\"", "\"\"");
+            if (escaped.Contains(',') || escaped.Contains('"') || escaped.Contains('\n') || escaped.Contains('\r'))
+            {
+                return '"' + escaped + '"';
+            }
+
+            return escaped;
         }
     }
 }

@@ -9,6 +9,7 @@
 # persistent storage
 *.dat
 *.json
+*.csv
 
 # User-specific files
 *.rsuser

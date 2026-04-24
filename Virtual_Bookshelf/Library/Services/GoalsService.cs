@@ -145,8 +145,8 @@ namespace Library.Services
                 var date = startOfWeek.AddDays(i);
                 int pagesRead = GetPagesReadOnDate(books, date);
                 int booksFinished = GetBooksFinishedOnDate(books, date);
-                
-                string progressBar = weeklyPageGoal.HasValue 
+
+                string progressBar = weeklyPageGoal.HasValue
                     ? $"{pagesRead}/{weeklyPageGoal.Value} pages"
                     : "N/A";
 
